@@ -1,7 +1,17 @@
-# projeto-si
+# Estimador de Produtos com IA
 
-Projeto Python para estimar dimensões e peso de um produto a partir de uma imagem
+Projeto Python para estimar dimensões e peso de produtos a partir de uma imagem
 e uma descrição textual, usando a OpenAI Responses API.
+
+O modelo retorna um JSON estruturado com:
+
+- dimensões estimadas do produto em centímetros;
+- peso líquido estimado em quilogramas;
+- dimensões estimadas da embalagem;
+- peso bruto estimado;
+- nível de confiança;
+- pistas usadas na estimativa;
+- fatores de incerteza.
 
 ## Instalação
 
@@ -12,20 +22,54 @@ pip install -r requirements.txt
 export OPENAI_API_KEY="sua_chave_aqui"
 ```
 
+Opcionalmente, defina o modelo padrão:
+
+```bash
+export OPENAI_MODEL="gpt-5.5"
+```
+
 ## Uso
 
 ```bash
-python estimate_product.py ./imagem.jpg "Suporte articulado de monitor em metal preto"
+python cli.py ./imagem.jpg "Suporte articulado de monitor em metal preto"
 ```
 
 Para salvar o JSON em arquivo:
 
 ```bash
-python estimate_product.py ./imagem.jpg "Suporte articulado de monitor em metal preto" --output resultado.json
+python cli.py ./imagem.jpg "Suporte articulado de monitor em metal preto" --output resultado.json
 ```
 
-Por padrão o script usa `gpt-5.5`. Para trocar:
+Para informar outro modelo na execução:
 
 ```bash
-python estimate_product.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
+python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 ```
+
+## Estrutura
+
+```text
+.
+├── cli.py
+├── product_estimator/
+│   ├── estimate_product.py
+│   ├── prompt.py
+│   └── schema.py
+├── requirements.txt
+└── README.md
+```
+
+`cli.py` é o ponto de entrada por terminal.
+
+`product_estimator/estimate_product.py` contém a integração com a OpenAI e pode
+ser reaproveitado por uma API web.
+
+`product_estimator/prompt.py` guarda o prompt de sistema.
+
+`product_estimator/schema.py` guarda o schema JSON esperado da resposta.
+
+## Observação
+
+As medidas retornadas são estimativas. Sem escala explícita na imagem ou medidas
+na descrição, o resultado deve ser tratado como aproximação para triagem ou MVP,
+não como medição exata.

@@ -3,7 +3,7 @@ import argparse
 import os
 import json
 
-from anyio import Path
+from pathlib import Path
 from product_estimator.estimate_product import estimate_product
 
 
