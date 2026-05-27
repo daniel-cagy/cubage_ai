@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 from product_estimator.schema import MEASUREMENT_SCHEMA
 from product_estimator.prompt import SYSTEM_PROMPT
+from product_estimator.post_processing import validation
 
 from openai import OpenAI
 
@@ -56,5 +57,8 @@ def estimate_product(image_path: Path, product_description: str, model: str) -> 
         },
     )
 
-    return json.loads(response.output_text)
+    result = json.loads(response.output_text)
+    result["validacao"] = validation(result)
+
+    return result
 

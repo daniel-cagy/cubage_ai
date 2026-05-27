@@ -5,13 +5,14 @@ e uma descrição textual, usando a OpenAI Responses API.
 
 O modelo retorna um JSON estruturado com:
 
-- dimensões estimadas do produto em centímetros;
-- peso líquido estimado em quilogramas;
-- dimensões estimadas da embalagem;
-- peso bruto estimado;
+- identificação provável do produto;
+- descrição resumida do que foi observado;
+- `produto`, contendo dimensões estimadas em centímetros e peso estimado em quilogramas;
+- `produto_com_embalagem`, contendo dimensões estimadas da embalagem e peso bruto estimado;
 - nível de confiança;
 - pistas usadas na estimativa;
-- fatores de incerteza.
+- fatores de incerteza;
+- `validacao`, adicionada no pós-processamento, com `status`, `erros` e `alertas`.
 
 ## Instalação
 
@@ -53,6 +54,7 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 ├── cli.py
 ├── product_estimator/
 │   ├── estimate_product.py
+│   ├── post_processing.py
 │   ├── prompt.py
 │   └── schema.py
 ├── requirements.txt
@@ -64,9 +66,11 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 `product_estimator/estimate_product.py` contém a integração com a OpenAI e pode
 ser reaproveitado por uma API web.
 
+`product_estimator/post_processing.py` adiciona a chave `validacao` e verifica a estrutura e a coerência logística da resposta.
+
 `product_estimator/prompt.py` guarda o prompt de sistema.
 
-`product_estimator/schema.py` guarda o schema JSON esperado da resposta.
+`product_estimator/schema.py` guarda o schema JSON esperado da resposta do modelo, antes do pós-processamento.
 
 ## Observação
 

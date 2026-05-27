@@ -1,4 +1,3 @@
-
 from typing import Any
 
 
@@ -11,10 +10,8 @@ MEASUREMENT_SCHEMA: dict[str, Any] = {
         "required": [
             "produto_identificado",
             "descricao_resumida",
-            "dimensoes_produto_estimadas_cm",
-            "peso_liquido_estimado_kg",
-            "dimensoes_embalagem_estimadas_cm",
-            "peso_bruto_estimado_kg",
+            "produto",
+            "produto_com_embalagem",
             "nivel_confianca",
             "principais_pistas_usadas",
             "fatores_de_incerteza",
@@ -23,10 +20,8 @@ MEASUREMENT_SCHEMA: dict[str, Any] = {
         "properties": {
             "produto_identificado": {"type": "string"},
             "descricao_resumida": {"type": "string"},
-            "dimensoes_produto_estimadas_cm": {"$ref": "#/$defs/dimensoes"},
-            "peso_liquido_estimado_kg": {"$ref": "#/$defs/faixa_numerica"},
-            "dimensoes_embalagem_estimadas_cm": {"$ref": "#/$defs/dimensoes"},
-            "peso_bruto_estimado_kg": {"$ref": "#/$defs/faixa_numerica"},
+            "produto": {"$ref": "#/$defs/medidas_e_peso"},
+            "produto_com_embalagem": {"$ref": "#/$defs/medidas_e_peso"},
             "nivel_confianca": {"type": "string", "enum": ["baixo", "medio", "alto"]},
             "principais_pistas_usadas": {
                 "type": "array",
@@ -60,7 +55,15 @@ MEASUREMENT_SCHEMA: dict[str, Any] = {
                     "altura": {"$ref": "#/$defs/faixa_numerica"},
                 },
             },
+            "medidas_e_peso": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["dimensoes_estimadas_cm", "peso_estimado_kg"],
+                "properties": {
+                    "dimensoes_estimadas_cm": {"$ref": "#/$defs/dimensoes"},
+                    "peso_estimado_kg": {"$ref": "#/$defs/faixa_numerica"},
+                },
+            },
         },
     },
 }
-
