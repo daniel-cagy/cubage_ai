@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stone · Cubage AI</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --green:       #00A868;
+      --green-dark:  #007A4C;
+      --green-light: #E6F7F1;
+      --bg:          #F4F6F8;
+      --surface:     #FFFFFF;
+      --border:      #D9DEE4;
+      --text:        #1A2332;
+      --muted:       #6B7A8D;
+      --danger:      #E53E3E;
+      --radius:      12px;
+      --shadow:      0 4px 24px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--green);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-mark svg { display: block; }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .logo-text span:first-child {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -.3px;
+    }
+
+    .logo-text span:last-child {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      margin-left: auto;
+      background: var(--green-light);
+      color: var(--green-dark);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+    }
+
+    /* ── Main layout ── */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 48px 24px 64px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 100%;
+      max-width: 640px;
+      padding: 40px;
+    }
+
+    /* ── Card header ── */
+    .card-header {
+      margin-bottom: 32px;
+    }
+
+    .card-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -.4px;
+    }
+
+    .card-header p {
+      margin-top: 6px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Step indicator ── */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 32px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .step.active { color: var(--green-dark); }
+    .step.active .step-num { background: var(--green); color: #fff; }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-divider {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      margin: 0 12px;
+    }
+
+    /* ── Form fields ── */
+    .field { margin-bottom: 24px; }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .field label span {
+      color: var(--green);
+      margin-left: 2px;
+    }
+
+    /* ── Drop zone ── */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      padding: 36px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+
+    .dropzone:hover,
+    .dropzone.drag-over {
+      border-color: var(--green);
+      background: var(--green-light);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .dropzone-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    .dropzone p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .dropzone p strong {
+      color: var(--green-dark);
+    }
+
+    .dropzone small {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── Preview ── */
+    #preview-wrap {
+      display: none;
+      margin-top: 12px;
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    #preview-wrap img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+
+    #preview-wrap .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(26,35,50,.7);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background .15s;
+    }
+
+    #preview-wrap .remove-btn:hover {
+      background: rgba(229,62,62,.85);
+    }
+
+    /* ── Textarea ── */
+    .field textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      line-height: 1.6;
+    }
+
+    .field textarea::placeholder { color: #A0AABB; }
+
+    .field textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(0,168,104,.12);
+      background: var(--surface);
+    }
+
+    .char-count {
+      text-align: right;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── Submit ── */
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      letter-spacing: -.1px;
+      transition: background .2s, transform .1s, box-shadow .2s;
+      box-shadow: 0 4px 12px rgba(0,168,104,.35);
+    }
+
+    .submit-btn:hover {
+      background: var(--green-dark);
+      box-shadow: 0 6px 18px rgba(0,168,104,.45);
+    }
+
+    .submit-btn:active { transform: scale(.98); }
+
+    .submit-btn:disabled {
+      background: var(--border);
+      color: var(--muted);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* ── Loading state ── */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result box ── */
+    #result {
+      display: none;
+      margin-top: 24px;
+      border: 1px solid var(--green);
+      background: var(--green-light);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+    }
+
+    #result .result-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green-dark);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #result .result-body {
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.6;
+      font-weight: 500;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .card { padding: 24px 20px; }
+      main { padding: 24px 16px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo-mark">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2L17 6V14L10 18L3 14V6L10 2Z" fill="white" opacity=".9"/>
+        <path d="M10 5.5L14.5 8V13L10 15.5L5.5 13V8L10 5.5Z" fill="#00A868"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span>Stone</span>
+      <span>Cubage AI</span>
+    </div>
+    <span class="badge">Beta</span>
+  </header>
+
+  <!-- Main -->
+  <main>
+    <div class="card">
+
+      <div class="card-header">
+        <h1>Identificação de Produto por IA</h1>
+        <p>Envie uma foto e descreva o produto. Nossa IA irá identificá-lo e calcular a cubagem automaticamente.</p>
+      </div>
+
+      <!-- Steps -->
+      <div class="steps">
+        <div class="step active">
+          <div class="step-num">1</div>
+          Foto
+        </div>
+        <div class="step-divider"></div>
+        <div class="step active">
+          <div class="step-num">2</div>
+          Descrição
+        </div>
+        <div class="step-divider"></div>
+        <div class="step" id="step-3">
+          <div class="step-num">3</div>
+          Resultado
+        </div>
+      </div>
+
+      <form id="cubage-form" novalidate>
+
+        <!-- Upload -->
+        <div class="field">
+          <label>Foto do produto <span>*</span></label>
+          <div class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept="image/*" />
+            <div class="dropzone-icon">
+              <svg width="22" height="22" fill="none" stroke="#6B7A8D" stroke-width="1.8" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+            </div>
+            <p><strong>Clique para selecionar</strong> ou arraste a imagem aqui</p>
+            <small>PNG, JPG, WEBP — máx. 10 MB</small>
+          </div>
+
+          <div id="preview-wrap">
+            <img id="preview-img" src="" alt="Preview do produto" />
+            <button type="button" class="remove-btn" id="remove-btn">✕ Remover</button>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Description -->
+        <div class="field">
+          <label>Descrição do produto <span>*</span></label>
+          <textarea
+            id="description"
+            placeholder="Ex: Caixa de papelão com notebook Dell, modelo Inspiron 15, embalagem original lacrada..."
+            maxlength="500"
+          ></textarea>
+          <div class="char-count"><span id="char-num">0</span> / 500</div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="submit-btn" id="submit-btn" disabled>
+          <div class="spinner" id="spinner"></div>
+          <svg id="btn-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 2a10 10 0 1 1 0 20A10 10 0 0 1 12 2z" stroke-opacity=".3"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <span id="btn-label">Analisar produto</span>
+        </button>
+
+      </form>
+
+      <!-- Result -->
+      <div id="result">
+        <div class="result-title">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          Resultado da análise
+        </div>
+        <div class="result-body" id="result-body">—</div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2025 Stone Pagamentos S.A. · Cubage AI — Todos os direitos reservados
+  </footer>
+
+  <script>
+    const dropzone    = document.getElementById('dropzone');
+    const fileInput   = document.getElementById('file-input');
+    const previewWrap = document.getElementById('preview-wrap');
+    const previewImg  = document.getElementById('preview-img');
+    const removeBtn   = document.getElementById('remove-btn');
+    const description = document.getElementById('description');
+    const charNum     = document.getElementById('char-num');
+    const form        = document.getElementById('cubage-form');
+    const submitBtn   = document.getElementById('submit-btn');
+    const spinner     = document.getElementById('spinner');
+    const btnIcon     = document.getElementById('btn-icon');
+    const btnLabel    = document.getElementById('btn-label');
+    const result      = document.getElementById('result');
+    const resultBody  = document.getElementById('result-body');
+    const step3       = document.getElementById('step-3');
+
+    let hasFile = false;
+
+    function updateSubmit() {
+      const hasText = description.value.trim().length > 0;
+      submitBtn.disabled = !(hasFile && hasText);
+    }
+
+    function showPreview(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        previewWrap.style.display = 'block';
+        dropzone.style.display = 'none';
+        hasFile = true;
+        updateSubmit();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) showPreview(fileInput.files[0]);
+    });
+
+    removeBtn.addEventListener('click', () => {
+      previewImg.src = '';
+      previewWrap.style.display = 'none';
+      dropzone.style.display = 'block';
+      fileInput.value = '';
+      hasFile = false;
+      updateSubmit();
+    });
+
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.classList.add('drag-over');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('drag-over');
+    });
+
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        fileInput.files = e.dataTransfer.files;
+        showPreview(file);
+      }
+    });
+
+    description.addEventListener('input', () => {
+      charNum.textContent = description.value.length;
+      updateSubmit();
+    });
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      if (submitBtn.disabled) return;
+
+      // Loading state
+      submitBtn.disabled = true;
+      spinner.style.display = 'block';
+      btnIcon.style.display = 'none';
+      btnLabel.textContent  = 'Analisando...';
+      result.style.display  = 'none';
+
+      // Simulate backend call — replace with real fetch()
+      setTimeout(() => {
+        spinner.style.display = 'none';
+        btnIcon.style.display = 'block';
+        btnLabel.textContent  = 'Analisar produto';
+        submitBtn.disabled    = false;
+
+        step3.classList.add('active');
+        step3.querySelector('.step-num').style.background = 'var(--green)';
+        step3.querySelector('.step-num').style.color = '#fff';
+
+        result.style.display = 'block';
+        resultBody.textContent = 'Produto identificado com sucesso. Os dados foram enviados para processamento de cubagem.';
+      }, 2200);
+    });
+  </script>
+
+</body>
+</html>
