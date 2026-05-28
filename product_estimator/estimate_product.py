@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 from product_estimator.schema import MEASUREMENT_SCHEMA
 from product_estimator.prompt import SYSTEM_PROMPT
-from product_estimator.post_processing import validation
+from product_estimator.post_processing import get_metricas_logisticas, validation, get_incertezas
+from product_estimator.constants import Objeto
 
 from openai import OpenAI
 
@@ -56,9 +57,14 @@ def estimate_product(image_path: Path, product_description: str, model: str) -> 
             }
         },
     )
-
-    result = json.loads(response.output_text)
-    result["validacao"] = validation(result)
+    result = {}
+    result["resposta"] = json.loads(response.output_text)
+    result["validacao"] = validation(result["resposta"])
+    result["metricas_logisticas"] = get_metricas_logisticas(
+        Objeto.from_dict(result["resposta"]["produto"]),
+        Objeto.from_dict(result["resposta"]["produto_com_embalagem"]),
+    )
+    result["incertezas"] = get_incertezas(result["resposta"]["produto"], result["resposta"]["produto_com_embalagem"])
 
     return result
 

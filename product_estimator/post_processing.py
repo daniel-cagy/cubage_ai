@@ -1,37 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-
-DIMENSION_KEYS = ("comprimento", "largura", "altura")
-RANGE_KEYS = ("min", "max", "estimativa")
-MEASURED_OBJECT_KEYS = ("produto", "produto_com_embalagem")
-CONFIDENCE_LEVELS = {"baixo", "medio", "alto"}
-
-
-@dataclass
-class Objeto:
-    x: int | float
-    y: int | float
-    z: int | float
-    w: int | float
-
-    @classmethod
-    def from_dict(cls, data: dict) -> Objeto:
-        return cls(
-            x=data["dimensoes_estimadas_cm"]["comprimento"]["estimativa"],
-            y=data["dimensoes_estimadas_cm"]["largura"]["estimativa"],
-            z=data["dimensoes_estimadas_cm"]["altura"]["estimativa"],
-            w=data["peso_estimado_kg"]["estimativa"],
-        )
-
-    def __ge__(self, other: "Objeto") -> bool:
-        return (
-            self.w >= other.w
-            and self.x >= other.x
-            and self.y >= other.y
-            and self.z >= other.z
-        )
+from product_estimator.constants import DIMENSION_KEYS, RANGE_KEYS, CONFIDENCE_LEVELS, FATOR_CUBAGEM, Objeto
 
 
 def validation(output: dict) -> dict:
@@ -107,29 +77,9 @@ def is_tipagem_correta(output: dict, erros: list[str] | None = None) -> bool:
     if erros is None:
         erros = []
 
-    if type(output["produto_identificado"]) != str:
-        erros.append("'produto_identificado' deve ser uma string.")
-
-    if type(output["descricao_resumida"]) != str:
-        erros.append("'descricao_resumida' deve ser uma string.")
-
-    if type(output["nivel_confianca"]) != str:
-        erros.append("'nivel_confianca' deve ser uma string.")
-
-    if type(output["principais_pistas_usadas"]) != list:
-        erros.append("'principais_pistas_usadas' deve ser uma lista.")
-
-    if type(output["fatores_de_incerteza"]) != list:
-        erros.append("'fatores_de_incerteza' deve ser uma lista.")
-
-    if type(output["observacoes"]) != str:
-        erros.append("'observacoes' deve ser uma string.")
-
-    # Validar se produto sozinho tem tipagem válida
     produto = output.get("produto")
     check_tipagem_objeto(produto, "produto", erros)
 
-    # Validar se produto com embalagem tem tipagem válida
     produto_com_embalagem = output.get("produto_com_embalagem")
     check_tipagem_objeto(produto_com_embalagem, "produto_com_embalagem", erros)
 
@@ -162,7 +112,7 @@ def check_tipagem_objeto(objeto: dict, nome: str = "objeto", erros: list[str] | 
 
 
 def is_valid_numeric_range(value: object) -> bool:
-    if not isinstance(value, dict):
+    if not type(value) == dict:
         return False
 
     if not all(key in value for key in RANGE_KEYS):
@@ -175,11 +125,65 @@ def is_valid_numeric_range(value: object) -> bool:
     if not all(is_number(item) for item in (min_value, max_value, estimated_value)):
         return False
 
-    if min_value < 0 or max_value < 0 or estimated_value < 0:
+    if min_value <= 0 or max_value <= 0 or estimated_value <= 0:
         return False
 
     return min_value <= estimated_value <= max_value
 
 
 def is_number(value: object) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
+    return type(value) in (int, float) and not type(value) == bool
+
+
+def get_metricas_logisticas(produto: Objeto, produto_com_embalagem: Objeto) -> dict[str, float]:
+    metricas = {}
+    volume_produto = produto.x * produto.y * produto.z
+    volume_embalagem = produto_com_embalagem.x * produto_com_embalagem.y * produto_com_embalagem.z
+    metricas["densidade_produto"] = produto.w / volume_produto
+    metricas["densidade_embalagem"] = produto_com_embalagem.w / volume_embalagem
+    metricas["fator_cubagem_produto"] = volume_produto / FATOR_CUBAGEM
+    metricas["fator_cubagem_embalagem"] = volume_embalagem / FATOR_CUBAGEM
+    return metricas
+
+def get_incerteza_calculada(produto: dict, produto_com_embalagem: dict) -> dict[str, float]:
+    incertezas = {}
+
+    dimensoes_produto = produto["dimensoes_estimadas_cm"]
+    
+    comprimento_produto = dimensoes_produto["comprimento"]
+    altura_produto = dimensoes_produto["altura"]
+    largura_produto = dimensoes_produto["largura"]
+    peso_produto = produto["peso_estimado_kg"]
+    
+    incertezas["comprimento"] = calcula_incerteza_no_valor(comprimento_produto)
+    incertezas["altura"] = calcula_incerteza_no_valor(altura_produto)
+    incertezas["largura"] = calcula_incerteza_no_valor(largura_produto)
+    incertezas["peso"] = calcula_incerteza_no_valor(peso_produto)
+
+
+    dimensoes_embalagem = produto_com_embalagem["dimensoes_estimadas_cm"]
+
+    dimensoes_embalagem = produto_com_embalagem["dimensoes_estimadas_cm"]
+    comprimento_embalagem = dimensoes_embalagem["comprimento"]
+    altura_embalagem = dimensoes_embalagem["altura"]
+    largura_embalagem = dimensoes_embalagem["largura"]
+    peso_embalagem = produto_com_embalagem["peso_estimado_kg"]
+    
+    incertezas["comprimento_embalagem"] = calcula_incerteza_no_valor(comprimento_embalagem)
+    incertezas["altura_embalagem"] = calcula_incerteza_no_valor(altura_embalagem)
+    incertezas["largura_embalagem"] = calcula_incerteza_no_valor(largura_embalagem)
+    incertezas["peso_embalagem"] = calcula_incerteza_no_valor(peso_embalagem)
+
+    return incertezas
+
+
+def calcula_incerteza_no_valor(faixa: dict) -> float:
+    min_value = faixa["min"]
+    max_value = faixa["max"]
+    estimated_value = faixa["estimativa"]
+    if estimated_value == 0:
+        return 0.0
+    return (max_value - min_value) / estimated_value
+
+
+
