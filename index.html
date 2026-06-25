@@ -385,6 +385,93 @@
       font-weight: 500;
     }
 
+    #result.error {
+      border-color: var(--danger);
+      background: #FFF5F5;
+    }
+
+    #result.error .result-title {
+      color: var(--danger);
+    }
+
+    .result-summary {
+      display: grid;
+      gap: 12px;
+    }
+
+    .result-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .result-description {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .confidence {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      background: var(--green);
+      color: #fff;
+    }
+
+    .confidence.low {
+      background: #D97706;
+    }
+
+    .validation-list {
+      margin-top: 4px;
+      padding-left: 18px;
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 560px) {
+      .result-grid { grid-template-columns: 1fr; }
+    }
+
     /* ── Divider ── */
     .divider {
       border: none;
@@ -594,31 +681,117 @@
       updateSubmit();
     });
 
-    form.addEventListener('submit', e => {
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading || !(hasFile && description.value.trim().length > 0);
+      spinner.style.display = isLoading ? 'block' : 'none';
+      btnIcon.style.display = isLoading ? 'none' : 'block';
+      btnLabel.textContent = isLoading ? 'Analisando...' : 'Analisar produto';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function formatNumber(value, maximumFractionDigits = 2) {
+      if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+      return new Intl.NumberFormat('pt-BR', { maximumFractionDigits }).format(value);
+    }
+
+    function formatRange(range, unit, maximumFractionDigits = 2) {
+      if (!range) return '—';
+      const estimate = formatNumber(range.estimativa, maximumFractionDigits);
+      const min = formatNumber(range.min, maximumFractionDigits);
+      const max = formatNumber(range.max, maximumFractionDigits);
+      return `${estimate} ${unit} <small>(${min}–${max} ${unit})</small>`;
+    }
+
+    function metric(label, value) {
+      return `
+        <div class="metric">
+          <div class="metric-label">${escapeHtml(label)}</div>
+          <div class="metric-value">${value}</div>
+        </div>
+      `;
+    }
+
+    function renderResult(payload) {
+      const resposta = payload.resposta || {};
+      const produto = resposta.produto || {};
+      const dimensoes = produto.dimensoes_estimadas_cm || {};
+      const peso = produto.peso_estimado_kg || {};
+      const metricas = payload.metricas_logisticas || {};
+      const validacao = payload.validacao || { status: false, erros: [], alertas: [] };
+      const confidence = resposta.nivel_confianca === 'alto' ? 'alto' : 'baixo';
+
+      const validationItems = [...(validacao.erros || []), ...(validacao.alertas || [])]
+        .map(item => `<li>${escapeHtml(item)}</li>`)
+        .join('');
+
+      result.classList.remove('error');
+      resultBody.innerHTML = `
+        <div class="result-summary">
+          <div class="result-name">${escapeHtml(resposta.produto_identificado || 'Produto identificado')}</div>
+          <div class="result-description">${escapeHtml(resposta.descricao_resumida || '')}</div>
+          <span class="confidence ${confidence === 'baixo' ? 'low' : ''}">Confiança ${confidence}</span>
+          <div class="result-grid">
+            ${metric('Comprimento', formatRange(dimensoes.comprimento, 'cm'))}
+            ${metric('Largura', formatRange(dimensoes.largura, 'cm'))}
+            ${metric('Altura', formatRange(dimensoes.altura, 'cm'))}
+            ${metric('Peso estimado', formatRange(peso, 'kg', 3))}
+            ${metric('Peso cubado', `${formatNumber(metricas.peso_cubado_kg, 2)} kg`)}
+            ${metric('Peso cobrável', `${formatNumber(metricas.peso_cobravel_estimado_kg, 2)} kg`)}
+          </div>
+          ${validationItems ? `<ul class="validation-list">${validationItems}</ul>` : ''}
+        </div>
+      `;
+    }
+
+    function renderError(message) {
+      result.classList.add('error');
+      resultBody.innerHTML = escapeHtml(message);
+    }
+
+    form.addEventListener('submit', async e => {
       e.preventDefault();
       if (submitBtn.disabled) return;
 
-      // Loading state
-      submitBtn.disabled = true;
-      spinner.style.display = 'block';
-      btnIcon.style.display = 'none';
-      btnLabel.textContent  = 'Analisando...';
-      result.style.display  = 'none';
+      const file = fileInput.files[0];
+      if (!file) return;
 
-      // Simulate backend call — replace with real fetch()
-      setTimeout(() => {
-        spinner.style.display = 'none';
-        btnIcon.style.display = 'block';
-        btnLabel.textContent  = 'Analisar produto';
-        submitBtn.disabled    = false;
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('description', description.value.trim());
+
+      setLoading(true);
+      result.style.display = 'none';
+
+      try {
+        const response = await fetch('/estimate', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(payload?.detail || 'Não foi possível analisar o produto.');
+        }
 
         step3.classList.add('active');
         step3.querySelector('.step-num').style.background = 'var(--green)';
         step3.querySelector('.step-num').style.color = '#fff';
 
+        renderResult(payload);
+      } catch (error) {
+        renderError(error.message || 'Erro inesperado ao analisar o produto.');
+      } finally {
         result.style.display = 'block';
-        resultBody.textContent = 'Produto identificado com sucesso. Os dados foram enviados para processamento de cubagem.';
-      }, 2200);
+        setLoading(false);
+      }
     });
   </script>
 

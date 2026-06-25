@@ -33,6 +33,28 @@ export OPENAI_MODEL="gpt-5.5"
 
 ## Uso
 
+### Interface web
+
+Inicie o backend FastAPI:
+
+```bash
+uvicorn api:app --reload
+```
+
+Abra a interface em:
+
+```text
+http://localhost:8000
+```
+
+A documentação interativa da API fica em:
+
+```text
+http://localhost:8000/docs
+```
+
+### CLI
+
 ```bash
 python cli.py ./imagem.jpg "Caixa de papelão com notebook Dell, modelo Inspiron 15, embalagem original lacrada"
 ```
@@ -53,7 +75,9 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 
 ```text
 .
+├── api.py
 ├── cli.py
+├── index.html
 ├── product_estimator/
 │   ├── constants.py
 │   ├── estimate_product.py
@@ -63,6 +87,10 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 ├── requirements.txt
 └── README.md
 ```
+
+`api.py` expõe o backend FastAPI e serve a interface web.
+
+`index.html` contém a interface que envia imagem e descrição para o endpoint `/estimate`.
 
 `cli.py` é o ponto de entrada por terminal.
 
