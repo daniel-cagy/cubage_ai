@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from product_estimator.estimate_product import estimate_product
 
@@ -19,6 +20,8 @@ app = FastAPI(
     description="API para estimar dimensões, peso e métricas logísticas de produtos embalados.",
     version="0.1.0",
 )
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/")

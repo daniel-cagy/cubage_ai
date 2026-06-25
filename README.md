@@ -38,7 +38,7 @@ export OPENAI_MODEL="gpt-5.5"
 Inicie o backend FastAPI:
 
 ```bash
-uvicorn api:app --reload
+python3 -m uvicorn api:app --reload
 ```
 
 Abra a interface em:
@@ -78,6 +78,9 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 ├── api.py
 ├── cli.py
 ├── index.html
+├── static/
+│   ├── app.js
+│   └── styles.css
 ├── product_estimator/
 │   ├── constants.py
 │   ├── estimate_product.py
@@ -90,7 +93,11 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 
 `api.py` expõe o backend FastAPI e serve a interface web.
 
-`index.html` contém a interface que envia imagem e descrição para o endpoint `/estimate`.
+`index.html` contém a estrutura da interface web.
+
+`static/styles.css` contém os estilos da interface.
+
+`static/app.js` envia imagem e descrição para o endpoint `/estimate` e renderiza o resultado.
 
 `cli.py` é o ponto de entrada por terminal.
 
