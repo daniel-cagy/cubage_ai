@@ -8,7 +8,7 @@ FATOR_CUBAGEM = 6000
 DIMENSION_KEYS = ("comprimento", "largura", "altura")
 RANGE_KEYS = ("min", "max", "estimativa")
 MEASURED_OBJECT_KEYS = ("produto",)
-CONFIDENCE_LEVELS = {"baixo", "medio", "alto"}
+CONFIDENCE_LEVELS = {"baixo", "alto"}
 
 
 @dataclass

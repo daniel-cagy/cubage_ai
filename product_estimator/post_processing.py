@@ -20,9 +20,6 @@ def validation(output: dict) -> dict:
         "descricao_resumida",
         "produto",
         "nivel_confianca",
-        "principais_pistas_usadas",
-        "fatores_de_incerteza",
-        "observacoes",
     }
 
     missing_keys = [key for key in required_keys if key not in output]
@@ -42,13 +39,7 @@ def validation(output: dict) -> dict:
         }
 
     if output["nivel_confianca"] not in CONFIDENCE_LEVELS:
-        erros.append("'nivel_confianca' deve ser 'baixo', 'medio' ou 'alto'.")
-
-    if len(output["principais_pistas_usadas"]) == 0:
-        alertas.append("'principais_pistas_usadas' está vazio.")
-
-    if output["nivel_confianca"] == "baixo" and len(output["fatores_de_incerteza"]) == 0:
-        alertas.append("Confiança baixa sem fatores de incerteza informados.")
+        erros.append("'nivel_confianca' deve ser 'baixo' ou 'alto'.")
 
     return {
         "status": len(erros) == 0,
@@ -60,6 +51,15 @@ def validation(output: dict) -> dict:
 def is_tipagem_correta(output: dict, erros: list[str] | None = None) -> bool:
     if erros is None:
         erros = []
+
+    if type(output["produto_identificado"]) != str:
+        erros.append("'produto_identificado' deve ser uma string.")
+
+    if type(output["descricao_resumida"]) != str:
+        erros.append("'descricao_resumida' deve ser uma string.")
+
+    if type(output["nivel_confianca"]) != str:
+        erros.append("'nivel_confianca' deve ser uma string.")
 
     produto = output.get("produto")
     check_tipagem_objeto(produto, "produto", erros)
@@ -127,29 +127,3 @@ def get_metricas_logisticas(produto: Objeto) -> dict[str, float]:
     metricas["peso_cobravel_estimado_kg"] = max(produto.w, peso_cubado)
     metricas["fator_cubagem"] = FATOR_CUBAGEM
     return metricas
-
-
-def get_incertezas(produto: dict) -> dict[str, float]:
-    incertezas = {}
-
-    dimensoes_produto = produto["dimensoes_estimadas_cm"]
-    comprimento_produto = dimensoes_produto["comprimento"]
-    altura_produto = dimensoes_produto["altura"]
-    largura_produto = dimensoes_produto["largura"]
-    peso_produto = produto["peso_estimado_kg"]
-
-    incertezas["comprimento"] = calcula_incerteza_no_valor(comprimento_produto)
-    incertezas["altura"] = calcula_incerteza_no_valor(altura_produto)
-    incertezas["largura"] = calcula_incerteza_no_valor(largura_produto)
-    incertezas["peso"] = calcula_incerteza_no_valor(peso_produto)
-
-    return incertezas
-
-
-def calcula_incerteza_no_valor(faixa: dict) -> float:
-    min_value = faixa["min"]
-    max_value = faixa["max"]
-    estimated_value = faixa["estimativa"]
-    if estimated_value == 0:
-        return 0.0
-    return (max_value - min_value) / estimated_value

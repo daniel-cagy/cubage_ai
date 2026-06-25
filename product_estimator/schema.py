@@ -12,25 +12,12 @@ MEASUREMENT_SCHEMA: dict[str, Any] = {
             "descricao_resumida",
             "produto",
             "nivel_confianca",
-            "principais_pistas_usadas",
-            "fatores_de_incerteza",
-            "observacoes",
         ],
         "properties": {
             "produto_identificado": {"type": "string"},
             "descricao_resumida": {"type": "string"},
             "produto": {"$ref": "#/$defs/medidas_e_peso"},
-            "nivel_confianca": {"type": "string", "enum": ["baixo", "medio", "alto"]},
-            "principais_pistas_usadas": {
-                "type": "array",
-                "items": {"type": "string"},
-                "minItems": 1,
-            },
-            "fatores_de_incerteza": {
-                "type": "array",
-                "items": {"type": "string"},
-            },
-            "observacoes": {"type": "string"},
+            "nivel_confianca": {"type": "string", "enum": ["baixo", "alto"]},
         },
         "$defs": {
             "faixa_numerica": {

@@ -14,28 +14,17 @@ Sua tarefa é analisar a imagem fornecida junto com a descrição do produto e i
    - peso total aproximado, incluindo embalagem quando ela estiver presente na imagem
    - unidade em quilogramas
 
-Você deve usar todas as pistas disponíveis:
-- escala visual relativa;
-- formato do objeto;
-- materiais aparentes;
-- categoria do produto;
-- proporções típicas de produtos semelhantes;
-- informações explícitas ou implícitas da descrição;
-- presença de embalagem, componentes, acessórios, cabos, estrutura ou partes metálicas/plásticas;
-- comparação com objetos comuns, quando houver.
+Use escala visual relativa, formato do objeto, materiais aparentes, categoria do produto, proporções típicas de produtos semelhantes e informações explícitas da descrição.
 
 Regras importantes:
 
 - Não afirme medidas como se fossem exatas.
 - Sempre trate as dimensões e pesos como estimativas.
-- Quando a imagem ou descrição forem insuficientes, indique claramente a incerteza.
 - Se houver ambiguidade, forneça uma faixa provável em vez de um único valor.
 - Não invente informações técnicas específicas que não possam ser inferidas.
-- Se o produto estiver parcialmente visível, em perspectiva distorcida, sem escala ou com baixa qualidade de imagem, reduza a confiança.
+- Se o produto estiver parcialmente visível, em perspectiva distorcida, sem escala ou com baixa qualidade de imagem, use nível de confiança baixo.
 - Não separe produto e embalagem em medidas diferentes.
 - Se a embalagem estiver visível, estime o volume e peso do conjunto embalado.
-- Se a embalagem não estiver visível, estime o produto como aparece na imagem e registre essa premissa em "observacoes".
-- Quando não for possível estimar com segurança, diga isso explicitamente e explique o motivo.
 - Use bom senso logístico: pesos e dimensões devem ser fisicamente plausíveis para o tipo de produto.
 
 Retorne sempre a resposta em JSON válido, sem markdown, sem comentários fora do JSON.
@@ -69,24 +58,12 @@ Use exatamente este formato:
       "estimativa": 0
     }
   },
-  "nivel_confianca": "baixo | medio | alto",
-  "principais_pistas_usadas": [
-    "pista 1",
-    "pista 2",
-    "pista 3"
-  ],
-  "fatores_de_incerteza": [
-    "fator 1",
-    "fator 2"
-  ],
-  "observacoes": "comentários relevantes sobre limitações, premissas ou riscos da estimativa"
+  "nivel_confianca": "baixo | alto"
 }
 
 Critérios para nível de confiança:
 
-- "alto": imagem clara, item inteiro visível, categoria conhecida, descrição coerente e boa noção de escala.
-- "medio": item visível e categoria identificável, mas sem escala explícita ou com alguma ambiguidade.
-- "baixo": imagem ruim, item parcial, sem referência de escala, categoria ambígua ou descrição insuficiente.
+- "alto": imagem clara, item inteiro visível, categoria identificável e descrição coerente.
+- "baixo": imagem ruim, item parcial, sem referência de escala, categoria ambígua, descrição insuficiente ou conflito entre imagem e descrição.
 
-Se a descrição textual trouxer medidas explícitas, priorize essas medidas sobre a inferência visual, mas valide se parecem compatíveis com a imagem.
-Se houver conflito entre imagem e descrição, indique o conflito em "observacoes" e reduza o nível de confiança."""
+Se a descrição textual trouxer medidas explícitas, priorize essas medidas sobre a inferência visual, mas valide se parecem compatíveis com a imagem."""

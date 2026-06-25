@@ -12,12 +12,9 @@ O sistema retorna um JSON estruturado com:
 - identificação provável do produto;
 - descrição resumida do que foi observado;
 - `produto`, contendo dimensões estimadas em centímetros e peso estimado em quilogramas do item fotografado;
-- nível de confiança;
-- pistas usadas na estimativa;
-- fatores de incerteza;
+- nível de confiança binário: `alto` ou `baixo`;
 - `validacao`, adicionada no pós-processamento, com `status`, `erros` e `alertas`;
-- `metricas_logisticas`, calculadas localmente a partir da estimativa;
-- `incertezas`, calculadas a partir das faixas estimadas pelo modelo.
+- `metricas_logisticas`, calculadas localmente a partir da estimativa.
 
 ## Instalação
 
@@ -74,7 +71,7 @@ ser reaproveitado por uma API web.
 
 `product_estimator/constants.py` guarda constantes operacionais, como o fator de cubagem.
 
-`product_estimator/post_processing.py` adiciona validação, métricas logísticas e incertezas à resposta.
+`product_estimator/post_processing.py` adiciona validação e métricas logísticas à resposta.
 
 `product_estimator/prompt.py` guarda o prompt de sistema.
 
