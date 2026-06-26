@@ -44,7 +44,7 @@ Inicie o backend FastAPI:
 python3 -m uvicorn api:app --reload
 ```
 
-A interface permite enviar a foto, a descrição e medidas conhecidas opcionais, como comprimento, largura, altura ou peso.
+A interface permite enviar a foto, a descrição, medidas conhecidas opcionais e escolher o modo de processamento da imagem: original, redimensionada ou quantizada.
 
 Abra a interface em:
 
@@ -92,6 +92,7 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 │       ├── format.js
 │       ├── knownMeasures.js
 │       ├── render.js
+│       ├── settings.js
 │       └── upload.js
 ├── product_estimator/
 │   ├── constants.py
@@ -112,14 +113,14 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 
 `static/app.js` orquestra os módulos da interface e envia os dados para o endpoint `/estimate`.
 
-`static/js/` contém os módulos de upload, medidas conhecidas, renderização, exportação, formatação e referências do DOM.
+`static/js/` contém os módulos de upload, medidas conhecidas, configurações avançadas, renderização, exportação, formatação e referências do DOM.
 
 `cli.py` é o ponto de entrada por terminal.
 
 `product_estimator/estimate_product.py` contém a integração com a OpenAI e pode
 ser reaproveitado por uma API web.
 
-`product_estimator/image_processing.py` redimensiona e comprime a imagem antes da chamada ao modelo.
+`product_estimator/image_processing.py` prepara a imagem antes da chamada ao modelo, com modos original, redimensionado e quantizado.
 
 `product_estimator/constants.py` guarda constantes operacionais, como o fator de cubagem.
 

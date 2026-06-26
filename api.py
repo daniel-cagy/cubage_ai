@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from product_estimator.estimate_product import estimate_product
+from product_estimator.image_processing import DEFAULT_IMAGE_PROCESSING_MODE, IMAGE_PROCESSING_MODES
 
 
 DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.5")
@@ -94,6 +95,7 @@ async def estimate(
     image: UploadFile = File(...),
     description: str = Form(...),
     known_measures: str = Form("[]"),
+    image_processing_mode: str = Form(DEFAULT_IMAGE_PROCESSING_MODE),
     model: str = Form(DEFAULT_MODEL),
 ) -> dict[str, Any]:
     if not description.strip():
@@ -110,6 +112,8 @@ async def estimate(
         raise HTTPException(status_code=413, detail="A imagem deve ter no máximo 10 MB.")
 
     parsed_known_measures = parse_known_measures(known_measures)
+    if image_processing_mode not in IMAGE_PROCESSING_MODES:
+        raise HTTPException(status_code=400, detail="Modo de processamento de imagem inválido.")
 
     suffix = Path(image.filename or "").suffix or ".jpg"
     temp_path: Path | None = None
@@ -124,6 +128,7 @@ async def estimate(
             product_description=description.strip(),
             model=model,
             known_measures=parsed_known_measures,
+            image_processing_mode=image_processing_mode,
         )
     except HTTPException:
         raise

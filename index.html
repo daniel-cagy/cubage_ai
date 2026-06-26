@@ -97,6 +97,27 @@
           </button>
         </div>
 
+        <!-- Advanced settings -->
+        <div class="field advanced-settings-field">
+          <details class="advanced-settings">
+            <summary>Configurações avançadas</summary>
+            <div class="processing-options" role="radiogroup" aria-label="Processamento da imagem">
+              <label class="processing-option">
+                <input type="radio" name="image-processing-mode" value="original" />
+                <span>Original</span>
+              </label>
+              <label class="processing-option">
+                <input type="radio" name="image-processing-mode" value="resized" checked />
+                <span>Redimensionada</span>
+              </label>
+              <label class="processing-option">
+                <input type="radio" name="image-processing-mode" value="quantized" />
+                <span>Quantizada</span>
+              </label>
+            </div>
+          </details>
+        </div>
+
         <!-- Submit -->
         <button type="submit" class="submit-btn" id="submit-btn" disabled>
           <div class="spinner" id="spinner"></div>

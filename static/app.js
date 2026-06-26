@@ -13,6 +13,7 @@ import {
 import { resetExport, setExportPayload, setupExportActions } from './js/exportResults.js';
 import { collectKnownMeasures, setupKnownMeasures } from './js/knownMeasures.js';
 import { renderError, renderResult } from './js/render.js';
+import { getImageProcessingMode, setupAdvancedSettings } from './js/settings.js';
 import { setupUpload } from './js/upload.js';
 
 let hasFile = false;
@@ -45,6 +46,12 @@ setupKnownMeasures({
 
 setupExportActions();
 
+setupAdvancedSettings({
+  onChange() {
+    resetExport();
+  },
+});
+
 description.addEventListener('input', () => {
   charNum.textContent = description.value.length;
   updateSubmit();
@@ -62,6 +69,7 @@ form.addEventListener('submit', async e => {
   formData.append('image', file);
   formData.append('description', description.value.trim());
   formData.append('known_measures', JSON.stringify(knownMeasures));
+  formData.append('image_processing_mode', getImageProcessingMode());
 
   setLoading(true);
   resetExport();

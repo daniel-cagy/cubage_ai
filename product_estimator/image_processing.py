@@ -9,6 +9,15 @@ DEFAULT_MAX_SIZE = 1024
 DEFAULT_JPEG_QUALITY = 85
 DEFAULT_QUANTIZE_COLORS = 128
 MIN_OPTIMIZATION_GAIN = 0.05
+IMAGE_PROCESSING_MODE_ORIGINAL = "original"
+IMAGE_PROCESSING_MODE_RESIZED = "resized"
+IMAGE_PROCESSING_MODE_QUANTIZED = "quantized"
+DEFAULT_IMAGE_PROCESSING_MODE = IMAGE_PROCESSING_MODE_RESIZED
+IMAGE_PROCESSING_MODES = {
+    IMAGE_PROCESSING_MODE_ORIGINAL,
+    IMAGE_PROCESSING_MODE_RESIZED,
+    IMAGE_PROCESSING_MODE_QUANTIZED,
+}
 
 
 def get_image_mime_type(image_format: str | None) -> str:
@@ -19,13 +28,43 @@ def get_image_mime_type(image_format: str | None) -> str:
     return "image/jpeg"
 
 
-def image_to_data_url(image_path: Path) -> str:
+def image_to_data_url(
+    image_path: Path,
+    processing_mode: str = DEFAULT_IMAGE_PROCESSING_MODE,
+) -> str:
     if not image_path.exists():
         raise FileNotFoundError(f"Imagem não encontrada: {image_path}")
 
-    image_bytes, mime_type = optimize_image(image_path)
+    image_bytes, mime_type = process_image(image_path, processing_mode)
     encoded = base64.b64encode(image_bytes).decode("utf-8")
     return f"data:{mime_type};base64,{encoded}"
+
+
+def process_image(
+    image_path: Path,
+    processing_mode: str = DEFAULT_IMAGE_PROCESSING_MODE,
+) -> tuple[bytes, str]:
+    if processing_mode == IMAGE_PROCESSING_MODE_ORIGINAL:
+        return original_image(image_path)
+
+    if processing_mode == IMAGE_PROCESSING_MODE_RESIZED:
+        return optimize_image(image_path)
+
+    if processing_mode == IMAGE_PROCESSING_MODE_QUANTIZED:
+        return quantize_image(image_path)
+
+    raise ValueError(f"Modo de processamento de imagem inválido: {processing_mode}")
+
+
+def original_image(image_path: Path) -> tuple[bytes, str]:
+    if not image_path.exists():
+        raise FileNotFoundError(f"Imagem não encontrada: {image_path}")
+
+    image_bytes = image_path.read_bytes()
+    with Image.open(image_path) as image:
+        mime_type = get_image_mime_type(image.format)
+
+    return image_bytes, mime_type
 
 
 def optimize_image(image_path: Path,

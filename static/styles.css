@@ -404,6 +404,78 @@
       background: #FFF5F5;
     }
 
+    /* ── Advanced settings ── */
+    .advanced-settings-field {
+      margin-top: -6px;
+    }
+
+    .advanced-settings {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      padding: 0;
+    }
+
+    .advanced-settings summary {
+      min-height: 42px;
+      padding: 11px 12px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      list-style-position: inside;
+    }
+
+    .processing-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      padding: 0 12px 12px;
+    }
+
+    .processing-option {
+      position: relative;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .processing-option input {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+      cursor: pointer;
+    }
+
+    .processing-option span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--muted);
+      padding: 8px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      overflow-wrap: anywhere;
+      pointer-events: none;
+      transition: border-color .2s, background .2s, color .2s, box-shadow .2s;
+    }
+
+    .processing-option input:checked + span {
+      border-color: var(--green);
+      background: var(--green-light);
+      color: var(--green-dark);
+    }
+
+    .processing-option:focus-within span {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(0,168,104,.12);
+    }
+
     /* ── Submit ── */
     .submit-btn {
       width: 100%;
@@ -733,6 +805,22 @@
       .known-measure-row select,
       .known-measure-row input {
         font-size: 16px;
+      }
+
+      .advanced-settings summary {
+        font-size: 14px;
+      }
+
+      .processing-options {
+        grid-template-columns: 1fr;
+      }
+
+      .processing-option {
+        min-height: 44px;
+      }
+
+      .processing-option span {
+        font-size: 14px;
       }
 
       .known-measure-row {

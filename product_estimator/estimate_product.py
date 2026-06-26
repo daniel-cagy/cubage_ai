@@ -8,7 +8,7 @@ from typing import Any
 from product_estimator.schema import MEASUREMENT_SCHEMA
 from product_estimator.prompt import SYSTEM_PROMPT
 from product_estimator.post_processing import get_metricas_logisticas, validation
-from product_estimator.image_processing import image_to_data_url
+from product_estimator.image_processing import DEFAULT_IMAGE_PROCESSING_MODE, image_to_data_url
 from product_estimator.constants import Objeto, KNOWN_MEASURE_LABELS, KNOWN_MEASURE_UNITS
 
 from openai import OpenAI
@@ -42,6 +42,7 @@ def estimate_product(
     product_description: str,
     model: str,
     known_measures: dict[str, float] | None = None,
+    image_processing_mode: str = DEFAULT_IMAGE_PROCESSING_MODE,
 ) -> dict[str, Any]:
     client = OpenAI()
     known_measures_text = format_known_measures(known_measures)
@@ -64,7 +65,7 @@ def estimate_product(
                     },
                     {
                         "type": "input_image",
-                        "image_url": image_to_data_url(image_path),
+                        "image_url": image_to_data_url(image_path, image_processing_mode),
                     },
                 ],
             }
@@ -80,6 +81,7 @@ def estimate_product(
     result = {}
     result["resposta"] = json.loads(response.output_text)
     result["medidas_conhecidas_informadas"] = known_measures or {}
+    result["modo_processamento_imagem"] = image_processing_mode
     result["validacao"] = validation(result["resposta"], known_measures)
 
     if result["validacao"]["status"]:
