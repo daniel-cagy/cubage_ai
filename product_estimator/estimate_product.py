@@ -15,6 +15,42 @@ from product_estimator.constants import Objeto
 from openai import OpenAI
 
 
+KNOWN_MEASURE_LABELS = {
+    "comprimento": "comprimento conhecido",
+    "largura": "largura conhecida",
+    "altura": "altura conhecida",
+    "peso": "peso conhecido",
+}
+
+KNOWN_MEASURE_UNITS = {
+    "comprimento": "cm",
+    "largura": "cm",
+    "altura": "cm",
+    "peso": "kg",
+}
+
+
+def format_known_measures(known_measures: dict[str, float] | None) -> str:
+    if not known_measures:
+        return ""
+
+    lines = []
+    for measure_type in ("comprimento", "largura", "altura", "peso"):
+        if measure_type in known_measures:
+            label = KNOWN_MEASURE_LABELS[measure_type]
+            unit = KNOWN_MEASURE_UNITS[measure_type]
+            lines.append(f"- {label}: {known_measures[measure_type]:g} {unit}")
+
+    if not lines:
+        return ""
+
+    return (
+        "Medidas conhecidas informadas pelo usuário:\n"
+        + "\n".join(lines)
+        + "\nUse essas medidas como referência prioritária se forem compatíveis com a imagem."
+    )
+
+
 def image_to_data_url(image_path: Path) -> str:
     if not image_path.exists():
         raise FileNotFoundError(f"Imagem não encontrada: {image_path}")
@@ -25,8 +61,14 @@ def image_to_data_url(image_path: Path) -> str:
     return f"data:{mime_type};base64,{encoded}"
 
 
-def estimate_product(image_path: Path, product_description: str, model: str) -> dict[str, Any]:
+def estimate_product(
+    image_path: Path,
+    product_description: str,
+    model: str,
+    known_measures: dict[str, float] | None = None,
+) -> dict[str, Any]:
     client = OpenAI()
+    known_measures_text = format_known_measures(known_measures)
 
     response = client.responses.create(
         model=model,
@@ -40,6 +82,7 @@ def estimate_product(image_path: Path, product_description: str, model: str) -> 
                         "text": (
                             "Descrição textual do produto:\n"
                             f"{product_description}\n\n"
+                            f"{known_measures_text}\n\n"
                             "Analise também a imagem anexada."
                         ),
                     },
@@ -60,7 +103,8 @@ def estimate_product(image_path: Path, product_description: str, model: str) -> 
 
     result = {}
     result["resposta"] = json.loads(response.output_text)
-    result["validacao"] = validation(result["resposta"])
+    result["medidas_conhecidas_informadas"] = known_measures or {}
+    result["validacao"] = validation(result["resposta"], known_measures)
 
     if result["validacao"]["status"]:
         produto = Objeto.from_dict(result["resposta"]["produto"])

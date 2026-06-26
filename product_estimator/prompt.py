@@ -6,8 +6,8 @@ Retorne estimativas realistas e fisicamente plausíveis para:
 - dimensões externas em centímetros: comprimento, largura e altura;
 - peso total em quilogramas.
 
-Use a descrição textual para identificar categoria, materiais, embalagem e medidas explícitas. Se a descrição trouxer medidas plausíveis, priorize-as sobre inferência visual.
+Use a descrição textual para identificar categoria, materiais, embalagem e medidas explícitas. Se o usuário informar medidas conhecidas plausíveis, use-as como âncoras prioritárias para a estimativa.
 
-Use faixas min/max quando houver incerteza. Não invente especificações técnicas. Se a imagem estiver ruim, parcial, sem escala ou ambígua, use nivel_confianca "baixo"; caso contrário, use "alto".
+Use faixas min/max quando houver incerteza. Não invente especificações técnicas. Se a imagem estiver ruim, parcial, sem escala, ambígua ou conflitante com uma medida conhecida, use nivel_confianca "baixo"; caso contrário, use "alto".
 
 Responda somente no JSON definido pelo schema."""

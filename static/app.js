@@ -15,10 +15,19 @@ const resultBody = document.getElementById('result-body');
 const exportActions = document.getElementById('export-actions');
 const exportJsonBtn = document.getElementById('export-json-btn');
 const exportCsvBtn = document.getElementById('export-csv-btn');
+const knownMeasuresList = document.getElementById('known-measures-list');
+const addKnownMeasureBtn = document.getElementById('add-known-measure-btn');
 const step3 = document.getElementById('step-3');
 
 let hasFile = false;
 let latestPayload = null;
+
+const KNOWN_MEASURE_OPTIONS = [
+  { value: 'comprimento', label: 'Comprimento', unit: 'cm' },
+  { value: 'largura', label: 'Largura', unit: 'cm' },
+  { value: 'altura', label: 'Altura', unit: 'cm' },
+  { value: 'peso', label: 'Peso', unit: 'kg' },
+];
 
 function updateSubmit() {
   const hasText = description.value.trim().length > 0;
@@ -29,6 +38,127 @@ function resetExport() {
   latestPayload = null;
   exportActions.hidden = true;
 }
+
+function getKnownMeasureOption(value) {
+  return KNOWN_MEASURE_OPTIONS.find(option => option.value === value);
+}
+
+function getSelectedKnownMeasureTypes(exceptSelect = null) {
+  return Array.from(knownMeasuresList.querySelectorAll('.known-measure-select'))
+    .filter(select => select !== exceptSelect)
+    .map(select => select.value)
+    .filter(Boolean);
+}
+
+function updateKnownMeasureUnit(row) {
+  const select = row.querySelector('.known-measure-select');
+  const unit = row.querySelector('.measure-unit');
+  const option = getKnownMeasureOption(select.value);
+  unit.textContent = option?.unit || '';
+}
+
+function rebuildKnownMeasureSelects() {
+  const selects = Array.from(knownMeasuresList.querySelectorAll('.known-measure-select'));
+
+  selects.forEach(select => {
+    const currentValue = select.value;
+    const unavailableValues = getSelectedKnownMeasureTypes(select);
+    const availableOptions = KNOWN_MEASURE_OPTIONS.filter(option => (
+      option.value === currentValue || !unavailableValues.includes(option.value)
+    ));
+
+    select.innerHTML = availableOptions
+      .map(option => `<option value="${option.value}">${option.label}</option>`)
+      .join('');
+
+    if (availableOptions.some(option => option.value === currentValue)) {
+      select.value = currentValue;
+    }
+
+    updateKnownMeasureUnit(select.closest('.known-measure-row'));
+  });
+
+  addKnownMeasureBtn.disabled = selects.length >= KNOWN_MEASURE_OPTIONS.length;
+}
+
+function addKnownMeasureRow() {
+  const selectedValues = getSelectedKnownMeasureTypes();
+  const firstAvailableOption = KNOWN_MEASURE_OPTIONS.find(option => !selectedValues.includes(option.value));
+  if (!firstAvailableOption) return;
+
+  const row = document.createElement('div');
+  row.className = 'known-measure-row';
+
+  const select = document.createElement('select');
+  select.className = 'known-measure-select';
+  select.setAttribute('aria-label', 'Tipo da medida conhecida');
+  select.innerHTML = `<option value="${firstAvailableOption.value}">${firstAvailableOption.label}</option>`;
+  select.value = firstAvailableOption.value;
+
+  const input = document.createElement('input');
+  input.className = 'known-measure-value';
+  input.type = 'number';
+  input.min = '0';
+  input.step = '0.01';
+  input.placeholder = 'Valor';
+  input.setAttribute('aria-label', 'Valor da medida conhecida');
+
+  const unit = document.createElement('span');
+  unit.className = 'measure-unit';
+
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'remove-measure-btn';
+  removeButton.textContent = 'x';
+  removeButton.setAttribute('aria-label', 'Remover medida conhecida');
+
+  select.addEventListener('change', () => {
+    rebuildKnownMeasureSelects();
+    resetExport();
+  });
+
+  input.addEventListener('input', resetExport);
+
+  removeButton.addEventListener('click', () => {
+    row.remove();
+    rebuildKnownMeasureSelects();
+    resetExport();
+  });
+
+  row.append(select, input, unit, removeButton);
+  knownMeasuresList.append(row);
+  rebuildKnownMeasureSelects();
+  input.focus();
+}
+
+function collectKnownMeasures() {
+  return Array.from(knownMeasuresList.querySelectorAll('.known-measure-row'))
+    .map(row => {
+      const tipo = row.querySelector('.known-measure-select').value;
+      const valor = Number(row.querySelector('.known-measure-value').value);
+      return { tipo, valor };
+    })
+    .filter(item => item.tipo && Number.isFinite(item.valor) && item.valor > 0);
+}
+
+function renderKnownMeasuresSummary(knownMeasures) {
+  const entries = Object.entries(knownMeasures || {});
+  if (!entries.length) return '';
+
+  const items = entries
+    .map(([type, value]) => {
+      const option = getKnownMeasureOption(type);
+      if (!option) return '';
+      return `<span>${option.label}: ${formatNumber(value, 3)} ${option.unit}</span>`;
+    })
+    .filter(Boolean)
+    .join('');
+
+  if (!items) return '';
+  return `<div class="known-measures-summary">${items}</div>`;
+}
+
+addKnownMeasureBtn.addEventListener('click', addKnownMeasureRow);
 
 function showPreview(file) {
   const reader = new FileReader();
@@ -139,6 +269,7 @@ function renderResult(payload) {
     <div class="result-summary">
       <div class="result-name">${escapeHtml(resposta.produto_identificado || 'Produto identificado')}</div>
       <div class="result-description">${escapeHtml(resposta.descricao_resumida || '')}</div>
+      ${renderKnownMeasuresSummary(payload.medidas_conhecidas_informadas)}
       <span class="confidence ${confidence === 'baixo' ? 'low' : ''}">Confiança ${confidence}</span>
       <div class="result-grid">
         ${metric('Comprimento', formatRange(dimensoes.comprimento, 'cm'))}
@@ -200,6 +331,7 @@ function buildCsv(payload) {
   const dimensoes = produto.dimensoes_estimadas_cm || {};
   const metricas = payload.metricas_logisticas || {};
   const validacao = payload.validacao || {};
+  const knownMeasures = payload.medidas_conhecidas_informadas || {};
   const data = {
     produto_identificado: resposta.produto_identificado || '',
     descricao_resumida: resposta.descricao_resumida || '',
@@ -211,6 +343,10 @@ function buildCsv(payload) {
   addRangeFields(data, 'altura_cm', dimensoes.altura);
   addRangeFields(data, 'peso_kg', produto.peso_estimado_kg);
 
+  data.medida_conhecida_comprimento_cm = knownMeasures.comprimento ?? '';
+  data.medida_conhecida_largura_cm = knownMeasures.largura ?? '';
+  data.medida_conhecida_altura_cm = knownMeasures.altura ?? '';
+  data.medida_conhecida_peso_kg = knownMeasures.peso ?? '';
   data.volume_produto_cm3 = metricas.volume_produto_cm3 ?? '';
   data.densidade_produto_kg_cm3 = metricas.densidade_produto_kg_cm3 ?? '';
   data.peso_cubado_kg = metricas.peso_cubado_kg ?? '';
@@ -251,8 +387,10 @@ form.addEventListener('submit', async e => {
   if (!file) return;
 
   const formData = new FormData();
+  const knownMeasures = collectKnownMeasures();
   formData.append('image', file);
   formData.append('description', description.value.trim());
+  formData.append('known_measures', JSON.stringify(knownMeasures));
 
   setLoading(true);
   resetExport();

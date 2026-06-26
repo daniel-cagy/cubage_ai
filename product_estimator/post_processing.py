@@ -3,7 +3,7 @@ from __future__ import annotations
 from product_estimator.constants import DIMENSION_KEYS, RANGE_KEYS, CONFIDENCE_LEVELS, FATOR_CUBAGEM, Objeto
 
 
-def validation(output: dict) -> dict:
+def validation(output: dict, known_measures: dict[str, float] | None = None) -> dict:
     erros = []
     alertas = []
 
@@ -41,6 +41,9 @@ def validation(output: dict) -> dict:
     if output["nivel_confianca"] not in CONFIDENCE_LEVELS:
         erros.append("'nivel_confianca' deve ser 'baixo' ou 'alto'.")
 
+    if known_measures:
+        check_medidas_conhecidas(output, known_measures, alertas)
+
     return {
         "status": len(erros) == 0,
         "erros": erros,
@@ -65,6 +68,32 @@ def is_tipagem_correta(output: dict, erros: list[str] | None = None) -> bool:
     check_tipagem_objeto(produto, "produto", erros)
 
     return len(erros) == 0
+
+
+def check_medidas_conhecidas(output: dict, known_measures: dict[str, float], alertas: list[str]) -> None:
+    produto = output["produto"]
+    dimensoes = produto["dimensoes_estimadas_cm"]
+
+    for measure_type, known_value in known_measures.items():
+        if measure_type in DIMENSION_KEYS:
+            faixa = dimensoes[measure_type]
+            unit = "cm"
+        elif measure_type == "peso":
+            faixa = produto["peso_estimado_kg"]
+            unit = "kg"
+        else:
+            continue
+
+        if known_value < faixa["min"] or known_value > faixa["max"]:
+            alertas.append(
+                f"Medida conhecida de {measure_type} ({known_value:g} {unit}) ficou fora da faixa estimada."
+            )
+            continue
+
+        if abs(faixa["estimativa"] - known_value) / known_value > 0.1:
+            alertas.append(
+                f"Estimativa de {measure_type} ficou distante da medida conhecida ({known_value:g} {unit})."
+            )
 
 
 def check_tipagem_objeto(objeto: dict, nome: str = "objeto", erros: list[str] | None = None) -> bool:

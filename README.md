@@ -1,7 +1,8 @@
 # Estimador de Produtos com IA
 
-Projeto Python para estimar dimensões e peso de produtos a partir de uma imagem
-e uma descrição textual, usando a OpenAI Responses API.
+Projeto Python para estimar dimensões e peso de produtos a partir de uma imagem,
+uma descrição textual e, opcionalmente, medidas conhecidas informadas pelo usuário,
+usando a OpenAI Responses API.
 
 A imagem deve representar o item que será medido. Quando o produto estiver na
 embalagem, as estimativas consideram o conjunto embalado exatamente como aparece
@@ -12,6 +13,7 @@ O sistema retorna um JSON estruturado com:
 - identificação provável do produto;
 - descrição resumida do que foi observado;
 - `produto`, contendo dimensões estimadas em centímetros e peso estimado em quilogramas do item fotografado;
+- `medidas_conhecidas_informadas`, quando o usuário enviar comprimento, largura, altura ou peso conhecidos;
 - nível de confiança binário: `alto` ou `baixo`;
 - `validacao`, adicionada no pós-processamento, com `status`, `erros` e `alertas`;
 - `metricas_logisticas`, calculadas localmente a partir da estimativa;
@@ -41,6 +43,8 @@ Inicie o backend FastAPI:
 ```bash
 python3 -m uvicorn api:app --reload
 ```
+
+A interface permite enviar a foto, a descrição e medidas conhecidas opcionais, como comprimento, largura, altura ou peso.
 
 Abra a interface em:
 

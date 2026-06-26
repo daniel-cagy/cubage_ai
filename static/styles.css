@@ -301,6 +301,104 @@
       margin-top: 4px;
     }
 
+    /* ── Known measures ── */
+    .known-measures-field {
+      margin-top: -4px;
+    }
+
+    .known-measures-list {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .known-measure-row {
+      display: grid;
+      grid-template-columns: minmax(130px, 1fr) minmax(100px, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .known-measure-row select,
+    .known-measure-row input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+
+    .known-measure-row select:focus,
+    .known-measure-row input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(0,168,104,.12);
+      background: var(--surface);
+    }
+
+    .measure-unit {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 24px;
+    }
+
+    .add-measure-btn,
+    .remove-measure-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+
+    .add-measure-btn {
+      padding: 9px 12px;
+      color: var(--green-dark);
+      border-color: var(--green);
+    }
+
+    .add-measure-btn:hover {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .add-measure-btn:disabled {
+      border-color: var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      cursor: not-allowed;
+    }
+
+    .remove-measure-btn {
+      width: 38px;
+      height: 38px;
+      color: var(--danger);
+    }
+
+    .remove-measure-btn:hover {
+      border-color: var(--danger);
+      background: #FFF5F5;
+    }
+
+    @media (max-width: 560px) {
+      .known-measure-row {
+        grid-template-columns: 1fr 1fr auto;
+      }
+
+      .known-measure-row select {
+        grid-column: 1 / -1;
+      }
+    }
+
     /* ── Submit ── */
     .submit-btn {
       width: 100%;
@@ -402,6 +500,22 @@
       color: var(--muted);
       font-size: 13px;
       line-height: 1.5;
+    }
+
+    .known-measures-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .known-measures-summary span {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--green-dark);
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     .result-grid {
