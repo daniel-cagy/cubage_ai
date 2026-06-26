@@ -85,7 +85,14 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 ├── index.html
 ├── static/
 │   ├── app.js
-│   └── styles.css
+│   ├── styles.css
+│   └── js/
+│       ├── dom.js
+│       ├── exportResults.js
+│       ├── format.js
+│       ├── knownMeasures.js
+│       ├── render.js
+│       └── upload.js
 ├── product_estimator/
 │   ├── constants.py
 │   ├── estimate_product.py
@@ -102,7 +109,9 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 
 `static/styles.css` contém os estilos da interface.
 
-`static/app.js` envia imagem e descrição para o endpoint `/estimate`, renderiza o resultado e exporta JSON/CSV.
+`static/app.js` orquestra os módulos da interface e envia os dados para o endpoint `/estimate`.
+
+`static/js/` contém os módulos de upload, medidas conhecidas, renderização, exportação, formatação e referências do DOM.
 
 `cli.py` é o ponto de entrada por terminal.
 
