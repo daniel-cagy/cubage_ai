@@ -14,7 +14,8 @@ O sistema retorna um JSON estruturado com:
 - `produto`, contendo dimensões estimadas em centímetros e peso estimado em quilogramas do item fotografado;
 - nível de confiança binário: `alto` ou `baixo`;
 - `validacao`, adicionada no pós-processamento, com `status`, `erros` e `alertas`;
-- `metricas_logisticas`, calculadas localmente a partir da estimativa.
+- `metricas_logisticas`, calculadas localmente a partir da estimativa;
+- exportação do resultado pela interface em JSON ou CSV.
 
 ## Instalação
 
@@ -97,7 +98,7 @@ python cli.py ./imagem.jpg "Produto de exemplo" --model gpt-5.2
 
 `static/styles.css` contém os estilos da interface.
 
-`static/app.js` envia imagem e descrição para o endpoint `/estimate` e renderiza o resultado.
+`static/app.js` envia imagem e descrição para o endpoint `/estimate`, renderiza o resultado e exporta JSON/CSV.
 
 `cli.py` é o ponto de entrada por terminal.
 

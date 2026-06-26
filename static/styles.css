@@ -487,3 +487,34 @@
       .card { padding: 24px 20px; }
       main { padding: 24px 16px 48px; }
     }
+
+.export-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.export-actions[hidden] {
+  display: none;
+}
+
+.export-btn {
+  border: 1px solid var(--green);
+  background: var(--surface);
+  color: var(--green-dark);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s, color .2s, border-color .2s;
+}
+
+.export-btn:hover {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
