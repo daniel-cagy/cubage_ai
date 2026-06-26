@@ -17,5 +17,6 @@ export const exportJsonBtn = document.getElementById('export-json-btn');
 export const exportCsvBtn = document.getElementById('export-csv-btn');
 export const knownMeasuresList = document.getElementById('known-measures-list');
 export const addKnownMeasureBtn = document.getElementById('add-known-measure-btn');
+export const advancedSettings = document.querySelector('.advanced-settings');
 export const imageProcessingModeInputs = document.querySelectorAll('input[name="image-processing-mode"]');
 export const step3 = document.getElementById('step-3');

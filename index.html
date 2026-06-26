@@ -101,19 +101,26 @@
         <div class="field advanced-settings-field">
           <details class="advanced-settings">
             <summary>Configurações avançadas</summary>
-            <div class="processing-options" role="radiogroup" aria-label="Processamento da imagem">
-              <label class="processing-option">
-                <input type="radio" name="image-processing-mode" value="original" />
-                <span>Original</span>
-              </label>
-              <label class="processing-option">
-                <input type="radio" name="image-processing-mode" value="resized" checked />
-                <span>Redimensionada</span>
-              </label>
-              <label class="processing-option">
-                <input type="radio" name="image-processing-mode" value="quantized" />
-                <span>Quantizada</span>
-              </label>
+            <div class="advanced-settings-content">
+              <div class="advanced-settings-inner">
+                <div class="advanced-settings-group">
+                  <div class="advanced-settings-group-title">Tratamento da imagem</div>
+                  <div class="processing-options" role="radiogroup" aria-label="Tratamento da imagem">
+                    <label class="processing-option">
+                      <input type="radio" name="image-processing-mode" value="original" />
+                      <span>Original</span>
+                    </label>
+                    <label class="processing-option">
+                      <input type="radio" name="image-processing-mode" value="resized" checked />
+                      <span>Redimensionada</span>
+                    </label>
+                    <label class="processing-option">
+                      <input type="radio" name="image-processing-mode" value="quantized" />
+                      <span>Quantizada</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
           </details>
         </div>

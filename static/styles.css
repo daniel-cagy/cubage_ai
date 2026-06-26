@@ -414,6 +414,7 @@
       border-radius: 8px;
       background: var(--bg);
       padding: 0;
+      overflow: hidden;
     }
 
     .advanced-settings summary {
@@ -426,11 +427,38 @@
       list-style-position: inside;
     }
 
+    .advanced-settings-content {
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity .18s ease, transform .22s ease;
+    }
+
+    .advanced-settings[open] .advanced-settings-content {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .advanced-settings-inner {
+      overflow: hidden;
+    }
+
+    .advanced-settings-group {
+      padding: 2px 12px 12px;
+    }
+
+    .advanced-settings-group-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
     .processing-options {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
-      padding: 0 12px 12px;
     }
 
     .processing-option {
@@ -809,6 +837,10 @@
 
       .advanced-settings summary {
         font-size: 14px;
+      }
+
+      .advanced-settings-group {
+        padding-bottom: 14px;
       }
 
       .processing-options {
