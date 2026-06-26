@@ -4,6 +4,10 @@
       padding: 0;
     }
 
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
     :root {
       --green:       #00A868;
       --green-dark:  #007A4C;
@@ -25,6 +29,7 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow-x: hidden;
     }
 
     /* ── Header ── */
@@ -99,6 +104,7 @@
       box-shadow: var(--shadow);
       width: 100%;
       max-width: 640px;
+      min-width: 0;
       padding: 40px;
     }
 
@@ -126,22 +132,29 @@
       display: flex;
       align-items: center;
       gap: 0;
+      width: 100%;
+      min-width: 0;
       margin-bottom: 32px;
+      overflow: hidden;
     }
 
     .step {
       display: flex;
       align-items: center;
+      flex: 0 1 auto;
+      min-width: 0;
       gap: 8px;
       font-size: 13px;
       font-weight: 500;
       color: var(--muted);
+      white-space: nowrap;
     }
 
     .step.active { color: var(--green-dark); }
     .step.active .step-num { background: var(--green); color: #fff; }
 
     .step-num {
+      flex: 0 0 auto;
       width: 24px;
       height: 24px;
       border-radius: 50%;
@@ -155,10 +168,11 @@
     }
 
     .step-divider {
-      flex: 1;
+      flex: 1 1 12px;
+      min-width: 8px;
       height: 1px;
       background: var(--border);
-      margin: 0 12px;
+      margin: 0 10px;
     }
 
     /* ── Form fields ── */
@@ -244,8 +258,9 @@
 
     #preview-wrap img {
       width: 100%;
-      max-height: 220px;
-      object-fit: cover;
+      max-height: 260px;
+      object-fit: contain;
+      background: var(--bg);
       display: block;
     }
 
@@ -387,16 +402,6 @@
     .remove-measure-btn:hover {
       border-color: var(--danger);
       background: #FFF5F5;
-    }
-
-    @media (max-width: 560px) {
-      .known-measure-row {
-        grid-template-columns: 1fr 1fr auto;
-      }
-
-      .known-measure-row select {
-        grid-column: 1 / -1;
-      }
     }
 
     /* ── Submit ── */
@@ -575,10 +580,6 @@
       font-weight: 600;
     }
 
-    @media (max-width: 560px) {
-      .result-grid { grid-template-columns: 1fr; }
-    }
-
     /* ── Divider ── */
     .divider {
       border: none;
@@ -597,9 +598,250 @@
     }
 
     /* ── Responsive ── */
-    @media (max-width: 480px) {
-      .card { padding: 24px 20px; }
-      main { padding: 24px 16px 48px; }
+    @media (max-width: 720px) {
+      header {
+        height: 58px;
+        padding: 0 18px;
+      }
+
+      main {
+        padding: 24px 16px 48px;
+      }
+
+      .card {
+        padding: 28px 24px;
+      }
+
+      .card-header {
+        margin-bottom: 24px;
+      }
+
+      .card-header h1 {
+        font-size: 21px;
+        line-height: 1.25;
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 28px;
+        overflow: visible;
+      }
+
+      .step {
+        min-width: 0;
+        width: 100%;
+        flex-direction: column;
+        justify-content: flex-start;
+        text-align: center;
+        gap: 6px;
+        font-size: 12px;
+        line-height: 1.25;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .step-divider {
+        display: none;
+      }
+
+      .step-num {
+        width: 28px;
+        height: 28px;
+      }
+
+      .dropzone {
+        padding: 28px 18px;
+      }
+
+      .known-measure-row {
+        grid-template-columns: minmax(0, 1fr) minmax(86px, .7fr) 32px 38px;
+      }
+
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      header {
+        padding: 0 14px;
+      }
+
+      .logo-mark {
+        width: 32px;
+        height: 32px;
+      }
+
+      .badge {
+        font-size: 10px;
+        padding: 4px 8px;
+      }
+
+      main {
+        padding: 16px 0 0;
+      }
+
+      .card {
+        max-width: none;
+        min-height: calc(100vh - 58px);
+        border-right: 0;
+        border-left: 0;
+        border-bottom: 0;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 24px 16px 28px;
+      }
+
+      .card-header p {
+        font-size: 13px;
+      }
+
+      .field {
+        margin-bottom: 20px;
+      }
+
+      .dropzone {
+        padding: 24px 14px;
+      }
+
+      .dropzone-icon {
+        width: 44px;
+        height: 44px;
+        margin-bottom: 12px;
+      }
+
+      .dropzone p {
+        font-size: 13px;
+      }
+
+      .dropzone p strong {
+        display: block;
+      }
+
+      #preview-wrap img {
+        max-height: 300px;
+      }
+
+      #preview-wrap .remove-btn {
+        min-height: 34px;
+        padding: 6px 10px;
+      }
+
+      .field textarea,
+      .known-measure-row select,
+      .known-measure-row input {
+        font-size: 16px;
+      }
+
+      .known-measure-row {
+        grid-template-columns: minmax(0, 1fr) 34px 42px;
+        gap: 8px;
+      }
+
+      .known-measure-row select {
+        grid-column: 1 / -1;
+      }
+
+      .known-measure-row input {
+        min-width: 0;
+      }
+
+      .measure-unit {
+        text-align: center;
+      }
+
+      .remove-measure-btn {
+        width: 42px;
+        height: 42px;
+      }
+
+      .add-measure-btn,
+      .submit-btn,
+      .export-btn {
+        min-height: 44px;
+      }
+
+      .add-measure-btn {
+        width: 100%;
+      }
+
+      .divider {
+        margin: 24px 0;
+      }
+
+      #result {
+        margin-top: 20px;
+        padding: 16px;
+      }
+
+      .result-name {
+        font-size: 16px;
+      }
+
+      .result-description,
+      .validation-list {
+        font-size: 12px;
+      }
+
+      .metric {
+        padding: 11px 12px;
+      }
+
+      .metric-value {
+        font-size: 13px;
+      }
+
+      .known-measures-summary span {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+
+      .export-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      footer {
+        padding: 16px;
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      header {
+        gap: 8px;
+      }
+
+      .logo-text span:first-child {
+        font-size: 14px;
+      }
+
+      .logo-text span:last-child {
+        font-size: 10px;
+      }
+
+      .badge {
+        display: none;
+      }
+
+      .card {
+        padding-right: 12px;
+        padding-left: 12px;
+      }
+
+      .card-header h1 {
+        font-size: 19px;
+      }
+
+      .steps {
+        gap: 6px;
+      }
+
+      .step {
+        font-size: 11px;
+      }
     }
 
 .export-actions {
@@ -632,3 +874,15 @@
   color: #fff;
 }
 
+
+
+@media (max-width: 560px) {
+  .export-actions:not([hidden]) {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .export-btn {
+    width: 100%;
+  }
+}
