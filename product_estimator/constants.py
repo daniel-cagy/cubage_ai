@@ -9,6 +9,19 @@ DIMENSION_KEYS = ("comprimento", "largura", "altura")
 RANGE_KEYS = ("min", "max", "estimativa")
 MEASURED_OBJECT_KEYS = ("produto",)
 CONFIDENCE_LEVELS = {"baixo", "alto"}
+KNOWN_MEASURE_LABELS = {
+    "comprimento": "comprimento conhecido",
+    "largura": "largura conhecida",
+    "altura": "altura conhecida",
+    "peso": "peso conhecido",
+}
+
+KNOWN_MEASURE_UNITS = {
+    "comprimento": "cm",
+    "largura": "cm",
+    "altura": "cm",
+    "peso": "kg",
+}
 
 
 @dataclass

@@ -10,24 +10,10 @@ from typing import Any
 from product_estimator.schema import MEASUREMENT_SCHEMA
 from product_estimator.prompt import SYSTEM_PROMPT
 from product_estimator.post_processing import get_metricas_logisticas, validation
-from product_estimator.constants import Objeto
+from product_estimator.constants import Objeto, KNOWN_MEASURE_LABELS, KNOWN_MEASURE_UNITS
 
 from openai import OpenAI
 
-
-KNOWN_MEASURE_LABELS = {
-    "comprimento": "comprimento conhecido",
-    "largura": "largura conhecida",
-    "altura": "altura conhecida",
-    "peso": "peso conhecido",
-}
-
-KNOWN_MEASURE_UNITS = {
-    "comprimento": "cm",
-    "largura": "cm",
-    "altura": "cm",
-    "peso": "kg",
-}
 
 
 def format_known_measures(known_measures: dict[str, float] | None) -> str:
