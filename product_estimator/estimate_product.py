@@ -90,4 +90,13 @@ def estimate_product(
     else:
         result["metricas_logisticas"] = {}
 
+    if result.usage:
+        result["uso_de_tokens"] = {
+            "input": result.usage.input_tokens,
+            "output": result.usage.output_tokens,
+            "total": result.usage.total_tokens,
+        }
+    else:
+        result["uso_de_tokens"] = {}
+    
     return result

@@ -1,0 +1,10 @@
+{
+    "imagem": "adaptador.jpg",
+    "descricao": "Adaptador mini displayport para hdmi 2plug 4k 30hz",
+    "resultado_esperado": {
+        "comprimento": 19,
+        "largura": 9,
+        "altura": 2,
+        "peso": 0.034
+    }
+}

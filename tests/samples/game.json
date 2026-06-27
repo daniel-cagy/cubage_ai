@@ -1,0 +1,10 @@
+{
+    "imagem": "game.jpg",
+    "descricao": "Ghost of Tsushima original ps4 midia fisica",
+    "resultado_esperado": {
+        "comprimento": 17.1,
+        "largura": 13.5,
+        "altura": 1.5,
+        "peso": 0.1
+    }
+}
