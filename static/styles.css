@@ -460,14 +460,17 @@
       margin-bottom: 8px;
     }
 
-    .model-selector {
+    .model-selector,
+    .cubage-factor-selector {
       display: grid;
       grid-template-columns: minmax(120px, .8fr) minmax(0, 1.2fr);
       gap: 8px;
     }
 
     .model-selector select,
-    .model-selector input {
+    .model-selector input,
+    .cubage-factor-selector select,
+    .cubage-factor-selector input {
       width: 100%;
       min-width: 0;
       min-height: 38px;
@@ -483,13 +486,16 @@
       transition: border-color .2s, box-shadow .2s;
     }
 
-    .model-selector input {
+    .model-selector input,
+    .cubage-factor-selector input {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-weight: 650;
     }
 
     .model-selector select:focus,
-    .model-selector input:focus {
+    .model-selector input:focus,
+    .cubage-factor-selector select:focus,
+    .cubage-factor-selector input:focus {
       border-color: var(--green);
       box-shadow: 0 0 0 3px rgba(0,168,104,.12);
     }
@@ -872,7 +878,9 @@
       .known-measure-row select,
       .known-measure-row input,
       .model-selector select,
-      .model-selector input {
+      .model-selector input,
+      .cubage-factor-selector select,
+      .cubage-factor-selector input {
         font-size: 16px;
       }
 
@@ -884,12 +892,15 @@
         padding-bottom: 14px;
       }
 
-      .model-selector {
+      .model-selector,
+      .cubage-factor-selector {
         grid-template-columns: 1fr;
       }
 
       .model-selector select,
-      .model-selector input {
+      .model-selector input,
+      .cubage-factor-selector select,
+      .cubage-factor-selector input {
         min-height: 44px;
       }
 

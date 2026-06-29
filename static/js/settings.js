@@ -1,4 +1,4 @@
-import { advancedSettings, imageProcessingModeInputs, modelInput, modelPreset } from './dom.js';
+import { advancedSettings, cubageFactorInput, cubageFactorPreset, imageProcessingModeInputs, modelInput, modelPreset } from './dom.js';
 
 const ANIMATION_DURATION = 220;
 const ANIMATION_EASING = 'ease';
@@ -56,6 +56,14 @@ function syncModelPresetFromInput() {
   modelPreset.value = matchingOption ? typedModel : 'custom';
 }
 
+function syncCubageFactorPresetFromInput() {
+  if (!cubageFactorInput || !cubageFactorPreset) return;
+
+  const typedFactor = cubageFactorInput.value.trim();
+  const matchingOption = Array.from(cubageFactorPreset.options).find(option => option.value === typedFactor);
+  cubageFactorPreset.value = matchingOption ? typedFactor : 'custom';
+}
+
 export function setupAdvancedSettings({ onChange }) {
   imageProcessingModeInputs.forEach(input => {
     input.addEventListener('change', onChange);
@@ -77,6 +85,22 @@ export function setupAdvancedSettings({ onChange }) {
     syncModelPresetFromInput();
   }
 
+  if (cubageFactorPreset && cubageFactorInput) {
+    cubageFactorPreset.addEventListener('change', () => {
+      if (cubageFactorPreset.value !== 'custom') {
+        cubageFactorInput.value = cubageFactorPreset.value;
+      }
+      onChange();
+    });
+
+    cubageFactorInput.addEventListener('input', () => {
+      syncCubageFactorPresetFromInput();
+      onChange();
+    });
+
+    syncCubageFactorPresetFromInput();
+  }
+
   animateAdvancedSettings();
 }
 
@@ -87,4 +111,8 @@ export function getImageProcessingMode() {
 
 export function getSelectedModel() {
   return modelInput?.value.trim() || 'gpt-5.4-mini';
+}
+
+export function getCubageFactor() {
+  return cubageFactorInput?.value.trim() || '6000';
 }

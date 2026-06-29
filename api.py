@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import tempfile
 from pathlib import Path
@@ -10,6 +11,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from product_estimator.constants import FATOR_CUBAGEM
 from product_estimator.estimate_product import estimate_product
 from product_estimator.image_processing import DEFAULT_IMAGE_PROCESSING_MODE, IMAGE_PROCESSING_MODES
 
@@ -17,6 +19,24 @@ from product_estimator.image_processing import DEFAULT_IMAGE_PROCESSING_MODE, IM
 DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 KNOWN_MEASURE_TYPES = {"comprimento", "largura", "altura", "peso"}
+
+
+def parse_cubage_factor(raw_cubage_factor: str) -> float:
+    try:
+        cubage_factor = float(raw_cubage_factor)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="O fator de cubagem precisa ser um número válido.",
+        ) from exc
+
+    if not math.isfinite(cubage_factor) or cubage_factor <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="O fator de cubagem precisa ser um número finito maior que zero.",
+        )
+
+    return cubage_factor
 
 
 def parse_known_measures(raw_known_measures: str) -> dict[str, float]:
@@ -97,6 +117,7 @@ async def estimate(
     known_measures: str = Form("[]"),
     image_processing_mode: str = Form(DEFAULT_IMAGE_PROCESSING_MODE),
     model: str = Form(DEFAULT_MODEL),
+    cubage_factor: str = Form(str(FATOR_CUBAGEM)),
 ) -> dict[str, Any]:
     if not description.strip():
         raise HTTPException(status_code=400, detail="A descrição do produto é obrigatória.")
@@ -116,6 +137,7 @@ async def estimate(
         raise HTTPException(status_code=413, detail="A imagem deve ter no máximo 10 MB.")
 
     parsed_known_measures = parse_known_measures(known_measures)
+    parsed_cubage_factor = parse_cubage_factor(cubage_factor)
     if image_processing_mode not in IMAGE_PROCESSING_MODES:
         raise HTTPException(status_code=400, detail="Modo de processamento de imagem inválido.")
 
@@ -133,6 +155,7 @@ async def estimate(
             model=model_name,
             known_measures=parsed_known_measures,
             image_processing_mode=image_processing_mode,
+            cubage_factor=parsed_cubage_factor,
         )
     except HTTPException:
         raise

@@ -127,6 +127,28 @@
                 </div>
 
                 <div class="advanced-settings-group">
+                  <div class="advanced-settings-group-title">Fator de cubagem</div>
+                  <div class="cubage-factor-selector">
+                    <select id="cubage-factor-preset" aria-label="Fator de cubagem sugerido">
+                      <option value="6000" selected>6000 · padrão</option>
+                      <option value="5000">5000</option>
+                      <option value="4000">4000</option>
+                      <option value="3000">3000</option>
+                      <option value="custom">Personalizado</option>
+                    </select>
+                    <input
+                      type="number"
+                      id="cubage-factor-input"
+                      value="6000"
+                      min="1"
+                      step="1"
+                      inputmode="numeric"
+                      aria-label="Fator de cubagem"
+                    />
+                  </div>
+                </div>
+
+                <div class="advanced-settings-group">
                   <div class="advanced-settings-group-title">Tratamento da imagem</div>
                   <div class="processing-options" role="radiogroup" aria-label="Tratamento da imagem">
                     <label class="processing-option">

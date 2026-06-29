@@ -9,7 +9,7 @@ from product_estimator.schema import MEASUREMENT_SCHEMA
 from product_estimator.prompt import SYSTEM_PROMPT
 from product_estimator.post_processing import get_metricas_logisticas, validation
 from product_estimator.image_processing import DEFAULT_IMAGE_PROCESSING_MODE, image_to_data_url
-from product_estimator.constants import Objeto, KNOWN_MEASURE_LABELS, KNOWN_MEASURE_UNITS
+from product_estimator.constants import FATOR_CUBAGEM, Objeto, KNOWN_MEASURE_LABELS, KNOWN_MEASURE_UNITS
 
 from openai import OpenAI
 
@@ -70,6 +70,7 @@ def estimate_product(
     model: str,
     known_measures: dict[str, float] | None = None,
     image_processing_mode: str = DEFAULT_IMAGE_PROCESSING_MODE,
+    cubage_factor: float = FATOR_CUBAGEM,
 ) -> dict[str, Any]:
     client = OpenAI()
     known_measures_text = format_known_measures(known_measures)
@@ -110,13 +111,14 @@ def estimate_product(
     result["openai_response_id"] = getattr(response, "id", None)
     result["openai_response_status"] = getattr(response, "status", None)
     result["modelo_utilizado"] = model
+    result["fator_cubagem_utilizado"] = cubage_factor
     result["medidas_conhecidas_informadas"] = known_measures or {}
     result["modo_processamento_imagem"] = image_processing_mode
     result["validacao"] = validation(result["resposta"], known_measures)
 
     if result["validacao"]["status"]:
         produto = Objeto.from_dict(result["resposta"]["produto"])
-        result["metricas_logisticas"] = get_metricas_logisticas(produto)
+        result["metricas_logisticas"] = get_metricas_logisticas(produto, cubage_factor)
     else:
         result["metricas_logisticas"] = {}
 

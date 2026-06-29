@@ -145,14 +145,14 @@ def is_number(value: object) -> bool:
     return type(value) in (int, float) and not type(value) == bool
 
 
-def get_metricas_logisticas(produto: Objeto) -> dict[str, float]:
+def get_metricas_logisticas(produto: Objeto, fator_cubagem: int | float = FATOR_CUBAGEM) -> dict[str, float]:
     metricas = {}
     volume_produto = produto.x * produto.y * produto.z
-    peso_cubado = volume_produto / FATOR_CUBAGEM
+    peso_cubado = volume_produto / fator_cubagem
 
     metricas["volume_produto_cm3"] = volume_produto
     metricas["densidade_produto_kg_cm3"] = produto.w / volume_produto
     metricas["peso_cubado_kg"] = peso_cubado
     metricas["peso_cobravel_estimado_kg"] = max(produto.w, peso_cubado)
-    metricas["fator_cubagem"] = FATOR_CUBAGEM
+    metricas["fator_cubagem"] = fator_cubagem
     return metricas

@@ -29,6 +29,7 @@ export function renderResult(payload) {
         ${metric('Peso estimado', formatRange(peso, 'kg', 3))}
         ${metric('Peso cubado', `${formatNumber(metricas.peso_cubado_kg, 2)} kg`)}
         ${metric('Peso cobrável', `${formatNumber(metricas.peso_cobravel_estimado_kg, 2)} kg`)}
+        ${metric('Fator de cubagem', formatNumber(metricas.fator_cubagem, 0))}
       </div>
       ${validationItems ? `<ul class="validation-list">${validationItems}</ul>` : ''}
     </div>

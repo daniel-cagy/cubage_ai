@@ -13,7 +13,7 @@ import {
 import { resetExport, setExportPayload, setupExportActions } from './js/exportResults.js';
 import { collectKnownMeasures, setupKnownMeasures } from './js/knownMeasures.js';
 import { renderError, renderResult } from './js/render.js';
-import { getImageProcessingMode, getSelectedModel, setupAdvancedSettings } from './js/settings.js';
+import { getCubageFactor, getImageProcessingMode, getSelectedModel, setupAdvancedSettings } from './js/settings.js';
 import { setupUpload } from './js/upload.js';
 
 let hasFile = false;
@@ -71,6 +71,7 @@ form.addEventListener('submit', async e => {
   formData.append('known_measures', JSON.stringify(knownMeasures));
   formData.append('image_processing_mode', getImageProcessingMode());
   formData.append('model', getSelectedModel());
+  formData.append('cubage_factor', getCubageFactor());
 
   setLoading(true);
   resetExport();
