@@ -446,6 +446,11 @@
       padding: 2px 12px 12px;
     }
 
+    .advanced-settings-group + .advanced-settings-group {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
     .advanced-settings-group-title {
       color: var(--muted);
       font-size: 11px;
@@ -453,6 +458,40 @@
       letter-spacing: .4px;
       text-transform: uppercase;
       margin-bottom: 8px;
+    }
+
+    .model-selector {
+      display: grid;
+      grid-template-columns: minmax(120px, .8fr) minmax(0, 1.2fr);
+      gap: 8px;
+    }
+
+    .model-selector select,
+    .model-selector input {
+      width: 100%;
+      min-width: 0;
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .model-selector input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 650;
+    }
+
+    .model-selector select:focus,
+    .model-selector input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(0,168,104,.12);
     }
 
     .processing-options {
@@ -831,7 +870,9 @@
 
       .field textarea,
       .known-measure-row select,
-      .known-measure-row input {
+      .known-measure-row input,
+      .model-selector select,
+      .model-selector input {
         font-size: 16px;
       }
 
@@ -841,6 +882,15 @@
 
       .advanced-settings-group {
         padding-bottom: 14px;
+      }
+
+      .model-selector {
+        grid-template-columns: 1fr;
+      }
+
+      .model-selector select,
+      .model-selector input {
+        min-height: 44px;
       }
 
       .processing-options {

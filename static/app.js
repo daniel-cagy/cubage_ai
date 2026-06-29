@@ -13,7 +13,7 @@ import {
 import { resetExport, setExportPayload, setupExportActions } from './js/exportResults.js';
 import { collectKnownMeasures, setupKnownMeasures } from './js/knownMeasures.js';
 import { renderError, renderResult } from './js/render.js';
-import { getImageProcessingMode, setupAdvancedSettings } from './js/settings.js';
+import { getImageProcessingMode, getSelectedModel, setupAdvancedSettings } from './js/settings.js';
 import { setupUpload } from './js/upload.js';
 
 let hasFile = false;
@@ -70,6 +70,7 @@ form.addEventListener('submit', async e => {
   formData.append('description', description.value.trim());
   formData.append('known_measures', JSON.stringify(knownMeasures));
   formData.append('image_processing_mode', getImageProcessingMode());
+  formData.append('model', getSelectedModel());
 
   setLoading(true);
   resetExport();

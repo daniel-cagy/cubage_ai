@@ -19,4 +19,6 @@ export const knownMeasuresList = document.getElementById('known-measures-list');
 export const addKnownMeasureBtn = document.getElementById('add-known-measure-btn');
 export const advancedSettings = document.querySelector('.advanced-settings');
 export const imageProcessingModeInputs = document.querySelectorAll('input[name="image-processing-mode"]');
+export const modelPreset = document.getElementById('model-preset');
+export const modelInput = document.getElementById('model-input');
 export const step3 = document.getElementById('step-3');

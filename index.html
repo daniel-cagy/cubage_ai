@@ -104,6 +104,29 @@
             <div class="advanced-settings-content">
               <div class="advanced-settings-inner">
                 <div class="advanced-settings-group">
+                  <div class="advanced-settings-group-title">Modelo de IA</div>
+                  <div class="model-selector">
+                    <select id="model-preset" aria-label="Modelo sugerido">
+                      <option value="gpt-5.4-mini" selected>gpt-5.4-mini</option>
+                      <option value="gpt-5.4">gpt-5.4</option>
+                      <option value="gpt-5.4-nano">gpt-5.4-nano</option>
+                      <option value="gpt-5.5">gpt-5.5</option>
+                      <option value="gpt-4o">gpt-4o</option>
+                      <option value="gpt-4o-mini">gpt-4o-mini</option>
+                      <option value="custom">Personalizado</option>
+                    </select>
+                    <input
+                      type="text"
+                      id="model-input"
+                      value="gpt-5.4-mini"
+                      autocomplete="off"
+                      spellcheck="false"
+                      aria-label="Nome do modelo"
+                    />
+                  </div>
+                </div>
+
+                <div class="advanced-settings-group">
                   <div class="advanced-settings-group-title">Tratamento da imagem</div>
                   <div class="processing-options" role="radiogroup" aria-label="Tratamento da imagem">
                     <label class="processing-option">

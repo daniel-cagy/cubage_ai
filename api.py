@@ -14,7 +14,7 @@ from product_estimator.estimate_product import estimate_product
 from product_estimator.image_processing import DEFAULT_IMAGE_PROCESSING_MODE, IMAGE_PROCESSING_MODES
 
 
-DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.5")
+DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 KNOWN_MEASURE_TYPES = {"comprimento", "largura", "altura", "peso"}
 
@@ -101,6 +101,10 @@ async def estimate(
     if not description.strip():
         raise HTTPException(status_code=400, detail="A descrição do produto é obrigatória.")
 
+    model_name = model.strip()
+    if not model_name:
+        raise HTTPException(status_code=400, detail="O modelo de IA é obrigatório.")
+
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="O arquivo enviado precisa ser uma imagem.")
 
@@ -126,7 +130,7 @@ async def estimate(
         return estimate_product(
             image_path=temp_path,
             product_description=description.strip(),
-            model=model,
+            model=model_name,
             known_measures=parsed_known_measures,
             image_processing_mode=image_processing_mode,
         )

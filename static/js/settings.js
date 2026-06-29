@@ -1,4 +1,4 @@
-import { advancedSettings, imageProcessingModeInputs } from './dom.js';
+import { advancedSettings, imageProcessingModeInputs, modelInput, modelPreset } from './dom.js';
 
 const ANIMATION_DURATION = 220;
 const ANIMATION_EASING = 'ease';
@@ -48,10 +48,34 @@ function animateAdvancedSettings() {
   });
 }
 
+function syncModelPresetFromInput() {
+  if (!modelInput || !modelPreset) return;
+
+  const typedModel = modelInput.value.trim();
+  const matchingOption = Array.from(modelPreset.options).find(option => option.value === typedModel);
+  modelPreset.value = matchingOption ? typedModel : 'custom';
+}
+
 export function setupAdvancedSettings({ onChange }) {
   imageProcessingModeInputs.forEach(input => {
     input.addEventListener('change', onChange);
   });
+
+  if (modelPreset && modelInput) {
+    modelPreset.addEventListener('change', () => {
+      if (modelPreset.value !== 'custom') {
+        modelInput.value = modelPreset.value;
+      }
+      onChange();
+    });
+
+    modelInput.addEventListener('input', () => {
+      syncModelPresetFromInput();
+      onChange();
+    });
+
+    syncModelPresetFromInput();
+  }
 
   animateAdvancedSettings();
 }
@@ -59,4 +83,8 @@ export function setupAdvancedSettings({ onChange }) {
 export function getImageProcessingMode() {
   const selectedInput = Array.from(imageProcessingModeInputs).find(input => input.checked);
   return selectedInput?.value || 'resized';
+}
+
+export function getSelectedModel() {
+  return modelInput?.value.trim() || 'gpt-5.4-mini';
 }

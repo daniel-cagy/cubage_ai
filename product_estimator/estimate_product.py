@@ -109,6 +109,7 @@ def estimate_product(
     result["resposta"] = parse_response_json(response)
     result["openai_response_id"] = getattr(response, "id", None)
     result["openai_response_status"] = getattr(response, "status", None)
+    result["modelo_utilizado"] = model
     result["medidas_conhecidas_informadas"] = known_measures or {}
     result["modo_processamento_imagem"] = image_processing_mode
     result["validacao"] = validation(result["resposta"], known_measures)
