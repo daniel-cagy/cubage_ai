@@ -1,5 +1,6 @@
 {
-    "imagem": "livro.jpg",
+    "imagens": ["livro1.jpg",
+                "livro2.jpg"],
     "descricao": "Um curso de calculo volume 1 guidorizzi 6a edicao",
     "resultado_esperado": {
         "comprimento": 23.7,

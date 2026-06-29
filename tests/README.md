@@ -335,6 +335,17 @@ python3 tests/run_tests.py \
   --repetitions 3
 ```
 
+Rodada comparando 1 imagem contra 2 imagens, mantendo apenas o `gpt-5.4-mini`:
+
+```bash
+python3 tests/run_tests.py \
+  --models gpt-5.4-mini \
+  --processing-modes resized quantized \
+  --image-counts 1 2 \
+  --repetitions 5
+```
+
+
 Ver plano sem chamar a API:
 
 ```bash
@@ -380,6 +391,13 @@ summary_by_model_mode_measure.csv
 summary_by_measure.csv
 summary_by_model_mode_weight.csv
 summary_by_weight.csv
+summary_by_model_mode_image_count.csv
+summary_by_image_count.csv
+summary_by_processing_mode_image_count.csv
+summary_by_sample_model_mode_image_count.csv
+summary_by_model_mode_image_count_measure.csv
+summary_delta_2_vs_1_images_by_model_mode.csv
+summary_delta_2_vs_1_images_by_model_mode_measure.csv
 report.md
 ```
 
@@ -398,6 +416,18 @@ heatmap_error_including_weight_by_model_mode.svg
 heatmap_interval_hit_dimensions_by_model_mode.svg
 heatmap_interval_hit_including_weight_by_model_mode.svg
 heatmap_total_cost_by_model_mode.svg
+heatmap_error_dimensions_by_model_mode_image_count.svg
+heatmap_interval_hit_dimensions_by_model_mode_image_count.svg
+heatmap_height_error_by_model_mode_image_count.svg
+heatmap_mean_tokens_by_model_mode_image_count.svg
+heatmap_mean_cost_by_model_mode_image_count.svg
+heatmap_delta_error_dimensions_2_vs_1_images.svg
+heatmap_delta_height_error_2_vs_1_images.svg
+heatmap_delta_interval_hit_dimensions_2_vs_1_images.svg
+heatmap_delta_tokens_2_vs_1_images.svg
+heatmap_delta_cost_2_vs_1_images.svg
+heatmap_delta_error_by_measure_2_vs_1_images.svg
+heatmap_delta_interval_hit_by_measure_2_vs_1_images.svg
 weight_absolute_error_grams_by_model_mode.svg
 weight_within_25g_rate_by_model_mode.svg
 weight_within_50g_rate_by_model_mode.svg
@@ -422,6 +452,8 @@ Priorize:
 Use `summary_by_sample_model_mode.csv` para descobrir produtos problemáticos. Se um produto específico puxa a média para cima, ele pode indicar uma categoria que precisa de tratamento especial.
 
 Use os heatmaps para comparar rápido modelos e modos de imagem. Para erro e custo, menor é melhor. Para taxa de acerto, maior é melhor.
+
+Para a comparação de quantidade de imagens, use `summary_by_model_mode_image_count.csv` para ver os valores absolutos de 1 e 2 imagens. Use `summary_delta_2_vs_1_images_by_model_mode.csv` para ver a mudança direta. Nessa tabela, deltas são calculados como `2 imagens - 1 imagem`: em erro, custo e tokens, negativo é melhor; em taxa de acerto, positivo é melhor.
 
 ## Limitações
 

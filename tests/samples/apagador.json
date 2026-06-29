@@ -1,5 +1,6 @@
 {
-    "imagem": "apagador.jpg",
+    "imagens": ["apagador1.jpg",
+                "apagador2.jpg"],
     "descricao": "Apagador pilot para quadro branco 1 unidade com suporte para canetas",
     "resultado_esperado": {
         "comprimento": 15,

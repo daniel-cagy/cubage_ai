@@ -184,7 +184,7 @@ python cli.py ./frente.jpg "Produto de exemplo" --extra-image ./lateral.jpg --ex
 
 `product_estimator/estimate_product.py` contém a integração com a OpenAI Responses API, monta a mensagem com uma ou mais imagens e gera a resposta final usada pela CLI e pela API.
 
-`product_estimator/image_processing.py` prepara a imagem antes do envio ao modelo. Os modos disponíveis são:
+`product_estimator/image_processing.py` prepara a imagem antes do envio ao modelo. O modo padrão atual é `quantized`. Os modos disponíveis são:
 
 - `original`: envia a imagem original;
 - `resized`: redimensiona e comprime a imagem;

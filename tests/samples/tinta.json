@@ -1,5 +1,6 @@
 {
-    "imagem": "tinta.jpg",
+    "imagens": ["tinta1.jpg",
+                "tinta2.jpg"],
     "descricao": "Tinta hp 664 xl colorido original 8ml",
     "resultado_esperado": {
         "comprimento": 11.4,

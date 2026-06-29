@@ -12,6 +12,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.colors import TwoSlopeNorm
 from matplotlib.ticker import FuncFormatter
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -26,6 +27,8 @@ MODE_COLORS = {
     "resized": "#00A868",
     "quantized": "#2563EB",
 }
+IMAGE_COUNT_BASE = 1
+IMAGE_COUNT_COMPARISON = 2
 
 MODEL_PRICES_PER_1M = {
     "gpt-5.5": {"input": 5.00, "output": 30.00},
@@ -97,6 +100,60 @@ MEASURE_SUMMARY_FIELDS = [
     "within_20_percent_rate",
 ]
 
+IMAGE_COUNT_DELTA_FIELDS = [
+    "group",
+    "model",
+    "image_processing_mode",
+    "runs_1_image",
+    "runs_2_images",
+    "success_rate_1_image",
+    "success_rate_2_images",
+    "delta_success_rate",
+    "error_dimensions_1_image",
+    "error_dimensions_2_images",
+    "delta_error_dimensions",
+    "relative_change_error_dimensions_percent",
+    "error_all_1_image",
+    "error_all_2_images",
+    "delta_error_all",
+    "relative_change_error_all_percent",
+    "interval_dimensions_1_image",
+    "interval_dimensions_2_images",
+    "delta_interval_dimensions",
+    "interval_all_1_image",
+    "interval_all_2_images",
+    "delta_interval_all",
+    "height_error_1_image",
+    "height_error_2_images",
+    "delta_height_error",
+    "relative_change_height_error_percent",
+    "weight_error_g_1_image",
+    "weight_error_g_2_images",
+    "delta_weight_error_g",
+    "tokens_1_image",
+    "tokens_2_images",
+    "delta_tokens",
+    "relative_change_tokens_percent",
+    "cost_1_image",
+    "cost_2_images",
+    "delta_cost",
+    "relative_change_cost_percent",
+]
+
+MEASURE_IMAGE_COUNT_DELTA_FIELDS = [
+    "group",
+    "model",
+    "image_processing_mode",
+    "measure",
+    "mean_percent_error_1_image",
+    "mean_percent_error_2_images",
+    "delta_mean_percent_error",
+    "relative_change_mean_percent_error_percent",
+    "interval_hit_rate_1_image",
+    "interval_hit_rate_2_images",
+    "delta_interval_hit_rate",
+]
+
 MEAN_SOURCE_COLUMNS = {
     "mean_duration_seconds": "duration_seconds",
     "mean_image_preprocessing_seconds": "image_preprocessing_seconds",
@@ -135,7 +192,7 @@ NUMERIC_COLUMNS = sorted(
     set(MEAN_SOURCE_COLUMNS.values())
     | set(TOTAL_SOURCE_COLUMNS.values())
     | set(MEASURE_NUMERIC_COLUMNS)
-    | {"peso_absolute_error_grams"}
+    | {"peso_absolute_error_grams", "image_count"}
 )
 
 
@@ -169,6 +226,9 @@ def latest_evaluation_csv() -> Path:
 def load_results(input_csv: Path) -> pd.DataFrame:
     df = pd.read_csv(input_csv)
 
+    if "image_count" not in df.columns:
+        df["image_count"] = IMAGE_COUNT_BASE
+
     for column in NUMERIC_COLUMNS:
         if column in df.columns:
             df[column] = pd.to_numeric(df[column], errors="coerce")
@@ -184,6 +244,7 @@ def load_results(input_csv: Path) -> pd.DataFrame:
     if "success" not in df.columns:
         df["success"] = False
 
+    df["image_count"] = pd.to_numeric(df["image_count"], errors="coerce").fillna(IMAGE_COUNT_BASE).astype(int)
     df["success_bool"] = df["success"].astype(str).str.lower().eq("true")
     add_weight_error_columns(df)
     add_cost_columns(df)
@@ -367,6 +428,202 @@ def split_measure_model_mode(summary: pd.DataFrame, measure: str, metric: str) -
     return split_model_mode(measure_summary, metric)
 
 
+def image_count_label(value: Any) -> str:
+    try:
+        count = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return f"{count} imagem" if count == 1 else f"{count} imagens"
+
+
+def parse_model_mode_image_count_summary(summary: pd.DataFrame) -> pd.DataFrame:
+    if summary.empty or "group" not in summary.columns:
+        return pd.DataFrame()
+
+    parts = summary["group"].str.split(" | ", regex=False, expand=True)
+    if parts.shape[1] < 3:
+        return pd.DataFrame()
+
+    data = summary.copy()
+    data["model"] = parts[0]
+    data["image_processing_mode"] = parts[1]
+    data["image_count"] = pd.to_numeric(parts[2], errors="coerce")
+    data = data.dropna(subset=["image_count"])
+    data["image_count"] = data["image_count"].astype(int)
+    data["group"] = data["model"] + " | " + data["image_processing_mode"]
+    return data
+
+
+def split_model_mode_image_count(summary: pd.DataFrame, metric: str) -> pd.DataFrame:
+    data = parse_model_mode_image_count_summary(summary)
+    if data.empty or metric not in data.columns:
+        return pd.DataFrame()
+
+    data[metric] = pd.to_numeric(data[metric], errors="coerce")
+    data["image_count_label"] = data["image_count"].map(image_count_label)
+    pivot = data.pivot_table(index="group", columns="image_count_label", values=metric, aggfunc="mean")
+    ordered_labels = [
+        image_count_label(count)
+        for count in sorted(data["image_count"].dropna().unique())
+        if image_count_label(count) in pivot.columns
+    ]
+    return pivot[ordered_labels]
+
+
+def get_metric_for_image_count(group: pd.DataFrame, image_count: int, metric: str) -> Any:
+    matching = group[group["image_count"] == image_count]
+    if matching.empty or metric not in matching.columns:
+        return pd.NA
+    value = matching.iloc[0][metric]
+    return value if pd.notna(value) else pd.NA
+
+
+def calculate_delta(before: Any, after: Any) -> Any:
+    if pd.isna(before) or pd.isna(after):
+        return pd.NA
+    return float(after) - float(before)
+
+
+def calculate_relative_change_percent(before: Any, after: Any) -> Any:
+    if pd.isna(before) or pd.isna(after) or float(before) == 0:
+        return pd.NA
+    return ((float(after) - float(before)) / abs(float(before))) * 100
+
+
+def build_image_count_delta_summary(
+    summary: pd.DataFrame,
+    measure_summary: pd.DataFrame,
+) -> pd.DataFrame:
+    data = parse_model_mode_image_count_summary(summary)
+    measure_data = parse_model_mode_image_count_summary(measure_summary)
+    if data.empty:
+        return pd.DataFrame(columns=IMAGE_COUNT_DELTA_FIELDS)
+
+    height_data = measure_data[measure_data.get("measure", "") == "altura"] if not measure_data.empty else pd.DataFrame()
+    rows = []
+
+    for (model, mode), group in data.groupby(["model", "image_processing_mode"], sort=True):
+        if IMAGE_COUNT_BASE not in set(group["image_count"]) or IMAGE_COUNT_COMPARISON not in set(group["image_count"]):
+            continue
+
+        height_group = pd.DataFrame()
+        if not height_data.empty:
+            height_group = height_data[
+                (height_data["model"] == model)
+                & (height_data["image_processing_mode"] == mode)
+            ]
+
+        error_dimensions_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "mean_abs_percent_error_dimensions")
+        error_dimensions_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "mean_abs_percent_error_dimensions")
+        error_all_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "mean_abs_percent_error_all")
+        error_all_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "mean_abs_percent_error_all")
+        interval_dimensions_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "mean_dimension_interval_hit_rate")
+        interval_dimensions_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "mean_dimension_interval_hit_rate")
+        interval_all_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "mean_all_interval_hit_rate")
+        interval_all_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "mean_all_interval_hit_rate")
+        height_error_1 = get_metric_for_image_count(height_group, IMAGE_COUNT_BASE, "mean_percent_error")
+        height_error_2 = get_metric_for_image_count(height_group, IMAGE_COUNT_COMPARISON, "mean_percent_error")
+        weight_error_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "weight_mean_absolute_error_g")
+        weight_error_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "weight_mean_absolute_error_g")
+        tokens_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "mean_total_tokens")
+        tokens_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "mean_total_tokens")
+        cost_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "mean_calculated_cost_usd")
+        cost_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "mean_calculated_cost_usd")
+
+        rows.append({
+            "group": f"{model} | {mode}",
+            "model": model,
+            "image_processing_mode": mode,
+            "runs_1_image": get_metric_for_image_count(group, IMAGE_COUNT_BASE, "runs"),
+            "runs_2_images": get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "runs"),
+            "success_rate_1_image": get_metric_for_image_count(group, IMAGE_COUNT_BASE, "success_rate"),
+            "success_rate_2_images": get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "success_rate"),
+            "delta_success_rate": calculate_delta(
+                get_metric_for_image_count(group, IMAGE_COUNT_BASE, "success_rate"),
+                get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "success_rate"),
+            ),
+            "error_dimensions_1_image": error_dimensions_1,
+            "error_dimensions_2_images": error_dimensions_2,
+            "delta_error_dimensions": calculate_delta(error_dimensions_1, error_dimensions_2),
+            "relative_change_error_dimensions_percent": calculate_relative_change_percent(error_dimensions_1, error_dimensions_2),
+            "error_all_1_image": error_all_1,
+            "error_all_2_images": error_all_2,
+            "delta_error_all": calculate_delta(error_all_1, error_all_2),
+            "relative_change_error_all_percent": calculate_relative_change_percent(error_all_1, error_all_2),
+            "interval_dimensions_1_image": interval_dimensions_1,
+            "interval_dimensions_2_images": interval_dimensions_2,
+            "delta_interval_dimensions": calculate_delta(interval_dimensions_1, interval_dimensions_2),
+            "interval_all_1_image": interval_all_1,
+            "interval_all_2_images": interval_all_2,
+            "delta_interval_all": calculate_delta(interval_all_1, interval_all_2),
+            "height_error_1_image": height_error_1,
+            "height_error_2_images": height_error_2,
+            "delta_height_error": calculate_delta(height_error_1, height_error_2),
+            "relative_change_height_error_percent": calculate_relative_change_percent(height_error_1, height_error_2),
+            "weight_error_g_1_image": weight_error_1,
+            "weight_error_g_2_images": weight_error_2,
+            "delta_weight_error_g": calculate_delta(weight_error_1, weight_error_2),
+            "tokens_1_image": tokens_1,
+            "tokens_2_images": tokens_2,
+            "delta_tokens": calculate_delta(tokens_1, tokens_2),
+            "relative_change_tokens_percent": calculate_relative_change_percent(tokens_1, tokens_2),
+            "cost_1_image": cost_1,
+            "cost_2_images": cost_2,
+            "delta_cost": calculate_delta(cost_1, cost_2),
+            "relative_change_cost_percent": calculate_relative_change_percent(cost_1, cost_2),
+        })
+
+    return pd.DataFrame(rows, columns=IMAGE_COUNT_DELTA_FIELDS)
+
+
+def build_measure_image_count_delta_summary(measure_summary: pd.DataFrame) -> pd.DataFrame:
+    data = parse_model_mode_image_count_summary(measure_summary)
+    if data.empty:
+        return pd.DataFrame(columns=MEASURE_IMAGE_COUNT_DELTA_FIELDS)
+
+    rows = []
+    for (model, mode, measure), group in data.groupby(["model", "image_processing_mode", "measure"], sort=True):
+        if IMAGE_COUNT_BASE not in set(group["image_count"]) or IMAGE_COUNT_COMPARISON not in set(group["image_count"]):
+            continue
+
+        error_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "mean_percent_error")
+        error_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "mean_percent_error")
+        hit_1 = get_metric_for_image_count(group, IMAGE_COUNT_BASE, "interval_hit_rate")
+        hit_2 = get_metric_for_image_count(group, IMAGE_COUNT_COMPARISON, "interval_hit_rate")
+
+        rows.append({
+            "group": f"{model} | {mode}",
+            "model": model,
+            "image_processing_mode": mode,
+            "measure": measure,
+            "mean_percent_error_1_image": error_1,
+            "mean_percent_error_2_images": error_2,
+            "delta_mean_percent_error": calculate_delta(error_1, error_2),
+            "relative_change_mean_percent_error_percent": calculate_relative_change_percent(error_1, error_2),
+            "interval_hit_rate_1_image": hit_1,
+            "interval_hit_rate_2_images": hit_2,
+            "delta_interval_hit_rate": calculate_delta(hit_1, hit_2),
+        })
+
+    return pd.DataFrame(rows, columns=MEASURE_IMAGE_COUNT_DELTA_FIELDS)
+
+
+def get_heatmap_norm(matrix, center_zero: bool):
+    if not center_zero:
+        return None
+
+    finite_values = matrix[pd.notna(matrix)]
+    if not len(finite_values):
+        return None
+
+    min_value = float(finite_values.min())
+    max_value = float(finite_values.max())
+    if min_value < 0 < max_value:
+        return TwoSlopeNorm(vmin=min_value, vcenter=0, vmax=max_value)
+
+    return None
+
+
 def save_grouped_bar_chart(
     path: Path,
     data: pd.DataFrame,
@@ -434,6 +691,7 @@ def save_heatmap(
     cmap: str,
     value_format: str,
     colorbar_percent: bool = False,
+    center_zero: bool = False,
 ) -> None:
     if data.empty or data.dropna(how="all").empty:
         return
@@ -445,7 +703,7 @@ def save_heatmap(
     height = max(5, 0.38 * len(data.index) + 2)
     width = max(8, 1.35 * len(data.columns) + 5)
     fig, ax = plt.subplots(figsize=(width, height))
-    image = ax.imshow(matrix, aspect="auto", cmap=cmap)
+    image = ax.imshow(matrix, aspect="auto", cmap=cmap, norm=get_heatmap_norm(matrix, center_zero))
 
     ax.set_title(title, fontsize=14, fontweight="bold")
     ax.set_xticks(range(len(data.columns)))
@@ -505,6 +763,7 @@ def save_model_mode_heatmap(
     value_format: str,
     colorbar_percent: bool = False,
     colorbar_currency: bool = False,
+    center_zero: bool = False,
 ) -> None:
     data = split_model_mode(summary, metric)
     if data.empty or data.dropna(how="all").empty:
@@ -518,7 +777,7 @@ def save_model_mode_heatmap(
     height = max(4.5, 0.58 * len(data.index) + 2)
     width = max(7, 1.45 * len(data.columns) + 4.8)
     fig, ax = plt.subplots(figsize=(width, height))
-    image = ax.imshow(matrix, aspect="auto", cmap=cmap)
+    image = ax.imshow(matrix, aspect="auto", cmap=cmap, norm=get_heatmap_norm(matrix, center_zero))
 
     ax.set_title(title, fontsize=14, fontweight="bold")
     ax.set_xticks(range(len(data.columns)))
@@ -599,6 +858,214 @@ def save_model_mode_heatmaps(path_prefix: Path, summary: pd.DataFrame) -> None:
         "Blues",
         "${:.3f}",
         colorbar_currency=True,
+    )
+
+
+def save_model_mode_image_count_heatmap(
+    path: Path,
+    summary: pd.DataFrame,
+    metric: str,
+    title: str,
+    colorbar_label: str,
+    cmap: str,
+    value_format: str,
+    colorbar_percent: bool = False,
+    colorbar_currency: bool = False,
+) -> None:
+    data = split_model_mode_image_count(summary, metric)
+    if data.empty or data.dropna(how="all").empty:
+        return
+
+    data = data.apply(pd.to_numeric, errors="coerce")
+    matrix = data.to_numpy(dtype=float, na_value=float("nan"))
+
+    height = max(4.5, 0.52 * len(data.index) + 2)
+    width = max(7, 1.55 * len(data.columns) + 5)
+    fig, ax = plt.subplots(figsize=(width, height))
+    image = ax.imshow(matrix, aspect="auto", cmap=cmap)
+
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.set_xticks(range(len(data.columns)))
+    ax.set_xticklabels(data.columns)
+    ax.set_yticks(range(len(data.index)))
+    ax.set_yticklabels(data.index)
+
+    for row_index, row_label in enumerate(data.index):
+        for col_index, column in enumerate(data.columns):
+            value = matrix[row_index, col_index]
+            if pd.notna(value):
+                ax.text(
+                    col_index,
+                    row_index,
+                    value_format.format(float(value)),
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                )
+
+    colorbar = fig.colorbar(image, ax=ax)
+    colorbar.set_label(colorbar_label)
+    if colorbar_percent:
+        colorbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:.0%}"))
+    if colorbar_currency:
+        colorbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f"${value:.4f}"))
+
+    plt.tight_layout()
+    plt.savefig(path)
+    plt.close()
+
+
+def save_image_count_heatmaps(
+    output_dir: Path,
+    summary: pd.DataFrame,
+    measure_summary: pd.DataFrame,
+) -> None:
+    save_model_mode_image_count_heatmap(
+        output_dir / "heatmap_error_dimensions_by_model_mode_image_count.svg",
+        summary,
+        "mean_abs_percent_error_dimensions",
+        "Erro dimensional por modelo, tratamento e quantidade de imagens",
+        "Erro médio dimensional (%)",
+        "YlOrRd",
+        "{:.1f}",
+    )
+    save_model_mode_image_count_heatmap(
+        output_dir / "heatmap_error_including_weight_by_model_mode_image_count.svg",
+        summary,
+        "mean_abs_percent_error_all",
+        "Erro incluindo peso por modelo, tratamento e quantidade de imagens",
+        "Erro médio incluindo peso (%)",
+        "YlOrRd",
+        "{:.1f}",
+    )
+    save_model_mode_image_count_heatmap(
+        output_dir / "heatmap_interval_hit_dimensions_by_model_mode_image_count.svg",
+        summary,
+        "mean_dimension_interval_hit_rate",
+        "Taxa de acerto dimensional por modelo, tratamento e quantidade de imagens",
+        "Taxa de acerto dimensional",
+        "YlGn",
+        "{:.0%}",
+        colorbar_percent=True,
+    )
+    save_model_mode_image_count_heatmap(
+        output_dir / "heatmap_mean_tokens_by_model_mode_image_count.svg",
+        summary,
+        "mean_total_tokens",
+        "Tokens médios por modelo, tratamento e quantidade de imagens",
+        "Tokens médios",
+        "Blues",
+        "{:.0f}",
+    )
+    save_model_mode_image_count_heatmap(
+        output_dir / "heatmap_mean_cost_by_model_mode_image_count.svg",
+        summary,
+        "mean_calculated_cost_usd",
+        "Custo médio por modelo, tratamento e quantidade de imagens",
+        "Custo médio (USD)",
+        "Blues",
+        "${:.5f}",
+        colorbar_currency=True,
+    )
+
+    if not measure_summary.empty:
+        height_summary = measure_summary[measure_summary["measure"] == "altura"]
+        save_model_mode_image_count_heatmap(
+            output_dir / "heatmap_height_error_by_model_mode_image_count.svg",
+            height_summary,
+            "mean_percent_error",
+            "Erro de altura por modelo, tratamento e quantidade de imagens",
+            "Erro médio de altura (%)",
+            "YlOrRd",
+            "{:.1f}",
+        )
+
+
+def save_image_count_delta_heatmaps(
+    output_dir: Path,
+    delta_summary: pd.DataFrame,
+    measure_delta_summary: pd.DataFrame,
+) -> None:
+    if delta_summary.empty:
+        return
+
+    save_model_mode_heatmap(
+        output_dir / "heatmap_delta_error_dimensions_2_vs_1_images.svg",
+        delta_summary,
+        "delta_error_dimensions",
+        "Mudança no erro dimensional ao usar 2 imagens",
+        "2 imagens - 1 imagem (p.p. de erro)",
+        "RdYlGn_r",
+        "{:+.1f}",
+        center_zero=True,
+    )
+    save_model_mode_heatmap(
+        output_dir / "heatmap_delta_height_error_2_vs_1_images.svg",
+        delta_summary,
+        "delta_height_error",
+        "Mudança no erro de altura ao usar 2 imagens",
+        "2 imagens - 1 imagem (p.p. de erro)",
+        "RdYlGn_r",
+        "{:+.1f}",
+        center_zero=True,
+    )
+    save_model_mode_heatmap(
+        output_dir / "heatmap_delta_interval_hit_dimensions_2_vs_1_images.svg",
+        delta_summary,
+        "delta_interval_dimensions",
+        "Mudança na taxa de acerto dimensional ao usar 2 imagens",
+        "2 imagens - 1 imagem",
+        "RdYlGn",
+        "{:+.0%}",
+        colorbar_percent=True,
+        center_zero=True,
+    )
+    save_model_mode_heatmap(
+        output_dir / "heatmap_delta_tokens_2_vs_1_images.svg",
+        delta_summary,
+        "delta_tokens",
+        "Mudança em tokens médios ao usar 2 imagens",
+        "2 imagens - 1 imagem",
+        "RdYlGn_r",
+        "{:+.0f}",
+        center_zero=True,
+    )
+    save_model_mode_heatmap(
+        output_dir / "heatmap_delta_cost_2_vs_1_images.svg",
+        delta_summary,
+        "delta_cost",
+        "Mudança no custo médio ao usar 2 imagens",
+        "2 imagens - 1 imagem (USD)",
+        "RdYlGn_r",
+        "${:+.5f}",
+        colorbar_currency=True,
+        center_zero=True,
+    )
+
+    if measure_delta_summary.empty:
+        return
+
+    error_data = measure_delta_summary.pivot(index="group", columns="measure", values="delta_mean_percent_error")
+    save_heatmap(
+        output_dir / "heatmap_delta_error_by_measure_2_vs_1_images.svg",
+        error_data,
+        "Mudança no erro por medida ao usar 2 imagens",
+        "2 imagens - 1 imagem (p.p. de erro)",
+        "RdYlGn_r",
+        "{:+.1f}",
+        center_zero=True,
+    )
+
+    hit_data = measure_delta_summary.pivot(index="group", columns="measure", values="delta_interval_hit_rate")
+    save_heatmap(
+        output_dir / "heatmap_delta_interval_hit_by_measure_2_vs_1_images.svg",
+        hit_data,
+        "Mudança no acerto de intervalo por medida ao usar 2 imagens",
+        "2 imagens - 1 imagem",
+        "RdYlGn",
+        "{:+.0%}",
+        colorbar_percent=True,
+        center_zero=True,
     )
 
 
@@ -686,6 +1153,7 @@ def write_report(
     df: pd.DataFrame,
     model_mode_summary: pd.DataFrame,
     measure_summary: pd.DataFrame,
+    image_count_delta_summary: pd.DataFrame,
 ) -> None:
     successes = int(df["success_bool"].sum())
     failures = len(df) - successes
@@ -766,6 +1234,26 @@ def write_report(
                 )
             lines.append(line)
 
+    if not image_count_delta_summary.empty:
+        lines.extend([
+            "",
+            "## Uma imagem vs duas imagens",
+            "",
+            "Os deltas abaixo usam `2 imagens - 1 imagem`. Para erro, tokens e custo, valor negativo é melhor. Para taxa de acerto, valor positivo é melhor.",
+            "",
+        ])
+        for _, row in image_count_delta_summary.iterrows():
+            lines.append(
+                f"- `{row['group']}`: "
+                f"erro dimensional {format_number(row['error_dimensions_1_image'], '%')} -> "
+                f"{format_number(row['error_dimensions_2_images'], '%')} "
+                f"(delta {format_number(row['delta_error_dimensions'], ' p.p.')}); "
+                f"altura delta {format_number(row['delta_height_error'], ' p.p.')}; "
+                f"acerto dimensional delta {format_percent(row['delta_interval_dimensions'])}; "
+                f"tokens delta {format_number(row['delta_tokens'])}; "
+                f"custo delta {format_usd(row['delta_cost'])}"
+            )
+
     failure_df = df[~df["success_bool"]]
     if not failure_df.empty and "error_type" in failure_df.columns:
         lines.extend(["", "## Falhas", ""])
@@ -790,6 +1278,10 @@ def write_report(
         "- `summary_by_measure.csv`",
         "- `summary_by_model_mode_weight.csv`",
         "- `summary_by_weight.csv`",
+        "- `summary_by_model_mode_image_count.csv`",
+        "- `summary_by_image_count.csv`",
+        "- `summary_delta_2_vs_1_images_by_model_mode.csv`",
+        "- `summary_delta_2_vs_1_images_by_model_mode_measure.csv`",
         "- gráficos `.svg` no mesmo diretório",
     ])
 
@@ -806,6 +1298,24 @@ def write_outputs(input_csv: Path, output_dir: Path) -> None:
     sample_model_mode_summary = build_summary(df, ["sample_id", "model", "image_processing_mode"])
     model_mode_measure_summary = build_measure_summary(df, ["model", "image_processing_mode"])
     measure_summary = build_measure_summary(df, [])
+    model_mode_image_count_summary = build_summary(df, ["model", "image_processing_mode", "image_count"])
+    image_count_summary = build_summary(df, ["image_count"])
+    mode_image_count_summary = build_summary(df, ["image_processing_mode", "image_count"])
+    sample_model_mode_image_count_summary = build_summary(
+        df,
+        ["sample_id", "model", "image_processing_mode", "image_count"],
+    )
+    model_mode_image_count_measure_summary = build_measure_summary(
+        df,
+        ["model", "image_processing_mode", "image_count"],
+    )
+    image_count_delta_summary = build_image_count_delta_summary(
+        model_mode_image_count_summary,
+        model_mode_image_count_measure_summary,
+    )
+    measure_image_count_delta_summary = build_measure_image_count_delta_summary(
+        model_mode_image_count_measure_summary
+    )
     model_mode_weight_summary = model_mode_measure_summary[
         model_mode_measure_summary["measure"] == "peso"
     ].copy()
@@ -819,6 +1329,13 @@ def write_outputs(input_csv: Path, output_dir: Path) -> None:
     save_summary(output_dir / "summary_by_measure.csv", measure_summary)
     save_summary(output_dir / "summary_by_model_mode_weight.csv", model_mode_weight_summary)
     save_summary(output_dir / "summary_by_weight.csv", weight_summary)
+    save_summary(output_dir / "summary_by_model_mode_image_count.csv", model_mode_image_count_summary)
+    save_summary(output_dir / "summary_by_image_count.csv", image_count_summary)
+    save_summary(output_dir / "summary_by_processing_mode_image_count.csv", mode_image_count_summary)
+    save_summary(output_dir / "summary_by_sample_model_mode_image_count.csv", sample_model_mode_image_count_summary)
+    save_summary(output_dir / "summary_by_model_mode_image_count_measure.csv", model_mode_image_count_measure_summary)
+    save_summary(output_dir / "summary_delta_2_vs_1_images_by_model_mode.csv", image_count_delta_summary)
+    save_summary(output_dir / "summary_delta_2_vs_1_images_by_model_mode_measure.csv", measure_image_count_delta_summary)
 
     save_grouped_bar_chart(
         output_dir / "mean_abs_percent_error_dimensions_by_model_mode.svg",
@@ -928,6 +1445,16 @@ def write_outputs(input_csv: Path, output_dir: Path) -> None:
     )
     save_measure_heatmaps(output_dir, model_mode_measure_summary)
     save_model_mode_heatmaps(output_dir, model_mode_summary)
+    save_image_count_heatmaps(
+        output_dir,
+        model_mode_image_count_summary,
+        model_mode_image_count_measure_summary,
+    )
+    save_image_count_delta_heatmaps(
+        output_dir,
+        image_count_delta_summary,
+        measure_image_count_delta_summary,
+    )
 
     for measure in MEASURES:
         save_grouped_bar_chart(
@@ -946,7 +1473,14 @@ def write_outputs(input_csv: Path, output_dir: Path) -> None:
         "Bytes médios",
     )
 
-    write_report(output_dir / "report.md", input_csv, df, model_mode_summary, measure_summary)
+    write_report(
+        output_dir / "report.md",
+        input_csv,
+        df,
+        model_mode_summary,
+        measure_summary,
+        image_count_delta_summary,
+    )
 
 
 def main() -> None:

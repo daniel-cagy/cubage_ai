@@ -106,7 +106,7 @@ export function setupAdvancedSettings({ onChange }) {
 
 export function getImageProcessingMode() {
   const selectedInput = Array.from(imageProcessingModeInputs).find(input => input.checked);
-  return selectedInput?.value || 'resized';
+  return selectedInput?.value || 'quantized';
 }
 
 export function getSelectedModel() {
