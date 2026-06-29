@@ -1,10 +1,26 @@
-# Avaliação
+# Avaliação do estimador
 
-Este diretório concentra os casos e resultados de avaliação do estimador.
+Este diretório concentra a avaliação experimental do estimador de dimensões e peso. A ideia não é fazer um teste unitário tradicional, e sim medir como diferentes modelos e tratamentos de imagem se comportam em um conjunto controlado de produtos.
 
-## Estrutura dos samples
+O fluxo é dividido em duas etapas:
 
-Cada arquivo em `tests/samples/` deve seguir o formato:
+1. `run_tests.py` executa chamadas reais à API para cada produto, modelo, modo de imagem e repetição.
+2. `analyze_results.py` lê o CSV gerado, agrega métricas, recalcula custos e produz resumos, gráficos e relatório.
+
+## Estrutura
+
+```txt
+tests/
+  samples/        Casos de teste em JSON
+  images/         Imagens usadas pelos samples, ignoradas pelo Git
+  results/        CSVs, relatórios e gráficos gerados, ignorados pelo Git
+  run_tests.py    Executor da avaliação
+  analyze_results.py
+```
+
+## Samples
+
+Cada arquivo em `tests/samples/` representa um produto. O formato mínimo é:
 
 ```json
 {
@@ -19,44 +35,204 @@ Cada arquivo em `tests/samples/` deve seguir o formato:
 }
 ```
 
-As imagens referenciadas ficam em `tests/images/`, que é ignorado pelo Git.
-Os CSVs gerados ficam em `tests/results/`, também ignorado pelo Git.
+As unidades esperadas são:
 
-## Convenção das dimensões nos testes
+- dimensões em centímetros;
+- peso em quilogramas.
 
-Para reduzir ambiguidade entre comprimento, largura e altura, a avaliação normaliza as três dimensões antes de calcular erro e acerto de intervalo:
+A imagem pode ser indicada por caminho relativo a `tests/images/` ou por caminho absoluto. O campo `descricao` é enviado ao modelo junto com a imagem. O campo `resultado_esperado` é usado apenas na avaliação.
+
+Um sample também pode incluir `medidas_conhecidas`, caso a avaliação queira simular o usuário informando uma medida real:
+
+```json
+{
+  "medidas_conhecidas": {
+    "comprimento": 10,
+    "peso": 0.12
+  }
+}
+```
+
+## Metodologia
+
+Para cada sample, o runner executa todas as combinações de:
+
+- modelo em `MODELS`;
+- modo de imagem em `IMAGE_PROCESSING_MODES`;
+- repetição configurada em `--repetitions`.
+
+A fórmula do total de chamadas é:
+
+```txt
+numero_de_produtos x numero_de_modelos x numero_de_modos_de_imagem x repeticoes
+```
+
+Exemplo:
+
+```txt
+5 produtos x 6 modelos x 3 modos x 3 repeticoes = 270 chamadas
+```
+
+As repetições existem porque respostas de modelos podem variar mesmo com o mesmo prompt, imagem e descrição. Repetir ajuda a medir estabilidade e reduz o risco de concluir algo a partir de uma resposta isolada.
+
+## Modos de imagem
+
+A avaliação compara os mesmos produtos com diferentes tratamentos de imagem:
+
+- `original`: envia a imagem original;
+- `resized`: redimensiona/comprime a imagem antes do envio;
+- `quantized`: aplica quantização de cores.
+
+O objetivo é medir se reduzir a imagem preserva qualidade suficiente e se diminui custo, latência ou tokens. Na prática, a análise deve comparar qualidade e custo juntos, porque tamanho de arquivo menor nem sempre significa menos tokens visuais.
+
+## Convenção das dimensões
+
+Comprimento, largura e altura podem ser subjetivos dependendo da orientação do produto na foto. Para reduzir essa ambiguidade, a avaliação normaliza as dimensões antes de calcular erro e acerto:
 
 - `comprimento`: maior lado;
 - `largura`: segundo maior lado;
 - `altura`: menor lado.
 
-Essa regra vale só para os testes. O prompt e a resposta do modelo continuam usando as chaves normais. O CSV inclui `comprimento_source_dimension`, `largura_source_dimension` e `altura_source_dimension` para mostrar de qual eixo retornado pelo modelo veio cada dimensão normalizada.
+Essa regra vale somente para os testes. O prompt e a resposta do modelo continuam usando as chaves normais. O CSV inclui:
 
-## Rodar avaliação completa
-
-```bash
-python3 tests/run_tests.py
+```txt
+comprimento_source_dimension
+largura_source_dimension
+altura_source_dimension
 ```
 
-A execução padrão roda todos os samples, todos os modelos da lista `MODELS`, os três modos de imagem e 3 repetições por combinação.
+Essas colunas mostram de qual eixo retornado pelo modelo veio cada dimensão normalizada.
 
-Com 5 samples, 6 modelos, 3 modos e 3 repetições, isso gera 270 chamadas à API.
+## Métricas principais
 
-## Smoke test barato
+### Erro percentual por medida
 
-```bash
-python3 tests/run_tests.py   --samples livro   --models gpt-4o-mini   --processing-modes resized   --repetitions 1
+Para cada medida, o runner calcula:
+
+```txt
+erro_absoluto = abs(estimativa - valor_real)
+erro_percentual = erro_absoluto / valor_real * 100
 ```
 
-## Estimar custo
+Isso gera colunas como:
 
-Informe os preços por 1M tokens via flag:
-
-```bash
-python3 tests/run_tests.py   --input-price-per-1m 0.00   --output-price-per-1m 0.00
+```txt
+comprimento_percent_error
+largura_percent_error
+altura_percent_error
+peso_percent_error
 ```
 
-Ou via ambiente:
+### Erro dimensional
+
+A métrica dimensional exclui peso e usa apenas:
+
+```txt
+comprimento, largura, altura
+```
+
+A coluna principal é:
+
+```txt
+mean_abs_percent_error_dimensions
+```
+
+Ela é a média dos erros percentuais das três dimensões em cada execução. Depois, na análise, essa métrica é agregada por modelo, modo de imagem ou produto.
+
+Essa é a métrica mais importante para avaliar qualidade dimensional.
+
+### Erro geral incluindo peso
+
+A coluna:
+
+```txt
+mean_abs_percent_error_all
+```
+
+inclui:
+
+```txt
+comprimento, largura, altura, peso
+```
+
+Ela é útil, mas deve ser lida com cuidado. Produtos muito leves podem ter erro percentual de peso muito alto mesmo quando o erro absoluto em gramas é pequeno.
+
+## Taxa de acerto de intervalo
+
+O modelo retorna faixas `min` e `max`, não apenas uma estimativa pontual. A avaliação considera uma medida como acertada quando o valor real cai dentro do intervalo retornado.
+
+Para dimensões:
+
+```txt
+dimension_interval_hits
+```
+
+conta quantas das três dimensões ficaram dentro do intervalo.
+
+```txt
+dimension_interval_hit_rate = dimension_interval_hits / 3
+```
+
+Exemplo: se comprimento e altura acertaram, mas largura errou:
+
+```txt
+dimension_interval_hit_rate = 2 / 3 = 0.6667
+```
+
+Para todas as medidas, incluindo peso:
+
+```txt
+all_interval_hit_rate = acertos / 4
+```
+
+A coluna:
+
+```txt
+all_interval_hits
+```
+
+é mais rígida: ela só fica `True` quando todas as quatro medidas estão dentro do intervalo. Os gráficos principais usam taxa parcial, não esse critério tudo-ou-nada.
+
+## Peso
+
+Peso é analisado separadamente porque costuma ser mais difícil de inferir pela imagem. Além disso, o erro percentual pode distorcer a leitura em produtos leves.
+
+Exemplo: se um produto pesa `34g` e o modelo estima `100g`, o erro absoluto é `66g`, mas o erro percentual passa de `190%`.
+
+Por isso a avaliação também calcula:
+
+```txt
+peso_absolute_error_grams
+peso_error_within_25g
+peso_error_within_50g
+peso_error_within_100g
+peso_error_within_20_percent
+```
+
+Na análise, os resumos incluem:
+
+```txt
+weight_mean_absolute_error_g
+weight_median_absolute_error_g
+weight_within_25g_rate
+weight_within_50g_rate
+weight_within_100g_rate
+weight_within_20_percent_rate
+```
+
+Para logística, muitas vezes `erro em gramas` é mais informativo que `erro percentual`.
+
+## Custo
+
+O runner pode receber preço por 1 milhão de tokens via flags:
+
+```bash
+python3 tests/run_tests.py \
+  --input-price-per-1m 0.00 \
+  --output-price-per-1m 0.00
+```
+
+Ou por variáveis de ambiente:
 
 ```bash
 export OPENAI_INPUT_PRICE_PER_1M=0.00
@@ -64,22 +240,180 @@ export OPENAI_OUTPUT_PRICE_PER_1M=0.00
 python3 tests/run_tests.py
 ```
 
-O CSV inclui tokens de entrada, saída, total e custo estimado quando a API retorna `usage`.
+Mesmo assim, a análise recalcula custos com uma tabela fixa em `tests/analyze_results.py`. Isso permite analisar CSVs antigos mesmo quando o runner foi executado com custo zerado.
+
+A fórmula usada é:
+
+```txt
+input_cost_usd = input_tokens / 1_000_000 * input_price_per_1m
+output_cost_usd = output_tokens / 1_000_000 * output_price_per_1m
+calculated_cost_usd = input_cost_usd + output_cost_usd
+```
+
+Os resumos incluem custo médio por chamada e custo total por grupo.
+
+## Custo-benefício
+
+O score principal de custo-benefício usa apenas dimensões:
+
+```txt
+cost_benefit_score_dimensions = mean_dimension_interval_hit_rate / mean_calculated_cost_usd
+```
+
+Maior é melhor, mas essa métrica não deve ser lida sozinha. Modelos muito baratos podem ter score alto mesmo com qualidade insuficiente.
+
+Use o score junto com:
+
+```txt
+mean_abs_percent_error_dimensions
+mean_dimension_interval_hit_rate
+weight_mean_absolute_error_g
+success_rate
+mean_calculated_cost_usd
+```
+
+Também existe um score incluindo peso:
+
+```txt
+cost_benefit_score_all = mean_all_interval_hit_rate / mean_calculated_cost_usd
+```
+
+## Rodar avaliação
+
+Rodada padrão, usando os modelos e modos configurados em `run_tests.py`:
+
+```bash
+python3 tests/run_tests.py
+```
+
+Rodada menor:
+
+```bash
+python3 tests/run_tests.py \
+  --samples livro \
+  --models gpt-5.4-mini \
+  --processing-modes resized \
+  --repetitions 1
+```
+
+Rodada comparando apenas modelos e modos específicos:
+
+```bash
+python3 tests/run_tests.py \
+  --models gpt-5.4 gpt-5.4-mini \
+  --processing-modes resized quantized \
+  --repetitions 3
+```
+
+Ver plano sem chamar a API:
+
+```bash
+python3 tests/run_tests.py --dry-run
+```
+
+Parar no primeiro erro:
+
+```bash
+python3 tests/run_tests.py --stop-on-error
+```
 
 ## Analisar resultados
 
-Depois de gerar um CSV de avaliação, rode:
+Depois de gerar um CSV:
 
 ```bash
 python3 tests/analyze_results.py tests/results/evaluation_YYYYMMDD_HHMMSS.csv
 ```
 
-Se o caminho do CSV for omitido, o script usa o `evaluation_*.csv` mais recente em `tests/results/`.
+Se o caminho for omitido, o script usa o `evaluation_*.csv` mais recente em `tests/results/`:
 
-O script gera uma pasta `analysis_<nome_do_csv>` com:
+```bash
+python3 tests/analyze_results.py
+```
 
-- resumos CSV por modelo, modo de imagem, produto e medida avaliada;
-- gráficos SVG gerados com matplotlib para erro médio dimensional, erro geral com peso, erro por medida, peso em gramas/faixas de tolerância, taxa de acerto, tokens, custo, custo-benefício, duração, sucesso e tamanho final da imagem;
-- `report.md` com os principais achados.
+O script gera uma pasta:
 
-O script usa pandas para agregação dos resultados e matplotlib para geração dos gráficos. A análise recalcula custo com uma tabela fixa de preços por modelo definida em `tests/analyze_results.py`, então não depende das flags de custo usadas no `run_tests.py`. O score principal de custo-benefício usa apenas dimensões, enquanto peso é analisado separadamente por erro absoluto em gramas e tolerâncias de 25g, 50g, 100g e 20%.
+```txt
+tests/results/analysis_<nome_do_csv>/
+```
+
+## Arquivos gerados
+
+A análise gera resumos como:
+
+```txt
+summary_by_model.csv
+summary_by_model_mode.csv
+summary_by_processing_mode.csv
+summary_by_sample_model_mode.csv
+summary_by_model_mode_measure.csv
+summary_by_measure.csv
+summary_by_model_mode_weight.csv
+summary_by_weight.csv
+report.md
+```
+
+Também gera gráficos SVG, incluindo:
+
+```txt
+mean_abs_percent_error_dimensions_by_model_mode.svg
+mean_abs_percent_error_all_by_model_mode.svg
+dimension_interval_hit_rate_by_model_mode.svg
+interval_hit_rate_by_model_mode.svg
+mean_percent_error_by_measure.svg
+mean_percent_error_by_measure_heatmap.svg
+interval_hit_rate_by_measure_heatmap.svg
+heatmap_error_dimensions_by_model_mode.svg
+heatmap_error_including_weight_by_model_mode.svg
+heatmap_interval_hit_dimensions_by_model_mode.svg
+heatmap_interval_hit_including_weight_by_model_mode.svg
+heatmap_total_cost_by_model_mode.svg
+weight_absolute_error_grams_by_model_mode.svg
+weight_within_25g_rate_by_model_mode.svg
+weight_within_50g_rate_by_model_mode.svg
+weight_within_100g_rate_by_model_mode.svg
+weight_within_20_percent_rate_by_model_mode.svg
+cost_benefit_score_by_model_mode.svg
+cost_benefit_scatter_by_model_mode.svg
+```
+
+## Como interpretar
+
+Use `summary_by_model_mode.csv` para escolher modelo e modo de imagem.
+
+Priorize:
+
+1. menor `mean_abs_percent_error_dimensions`;
+2. maior `mean_dimension_interval_hit_rate`;
+3. menor `mean_calculated_cost_usd`;
+4. peso aceitável em `weight_mean_absolute_error_g` e nas tolerâncias em gramas;
+5. `success_rate` próximo de 1.
+
+Use `summary_by_sample_model_mode.csv` para descobrir produtos problemáticos. Se um produto específico puxa a média para cima, ele pode indicar uma categoria que precisa de tratamento especial.
+
+Use os heatmaps para comparar rápido modelos e modos de imagem. Para erro e custo, menor é melhor. Para taxa de acerto, maior é melhor.
+
+## Limitações
+
+A avaliação mede o comportamento nos samples existentes. Mais repetições ajudam a medir estabilidade, mas não substituem variedade de produtos.
+
+Para uma conclusão mais robusta, prefira aumentar a quantidade e diversidade dos samples em vez de repetir muitas vezes os mesmos itens.
+
+Categorias importantes para cobrir:
+
+- itens muito leves, como cabos, adaptadores e cartuchos;
+- itens pequenos rígidos, como mouse, carregador e controle;
+- itens planos, como livros, jogos e cadernos;
+- caixas pequenas, como cosméticos e medicamentos;
+- itens densos, como ferramentas e peças metálicas;
+- itens volumosos leves, como embalagens grandes e produtos macios.
+
+## Dependências
+
+A execução da avaliação usa o projeto principal e `Pillow`. A análise usa `pandas` e `matplotlib`.
+
+Instale tudo com:
+
+```bash
+pip install -r requirements.txt
+```

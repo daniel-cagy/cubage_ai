@@ -495,6 +495,113 @@ def save_measure_heatmaps(path_prefix: Path, summary: pd.DataFrame) -> None:
     )
 
 
+def save_model_mode_heatmap(
+    path: Path,
+    summary: pd.DataFrame,
+    metric: str,
+    title: str,
+    colorbar_label: str,
+    cmap: str,
+    value_format: str,
+    colorbar_percent: bool = False,
+    colorbar_currency: bool = False,
+) -> None:
+    data = split_model_mode(summary, metric)
+    if data.empty or data.dropna(how="all").empty:
+        return
+
+    ordered_columns = [mode for mode in IMAGE_PROCESSING_MODES if mode in data.columns]
+    data = data[ordered_columns]
+    data = data.apply(pd.to_numeric, errors="coerce")
+    matrix = data.to_numpy(dtype=float, na_value=float("nan"))
+
+    height = max(4.5, 0.58 * len(data.index) + 2)
+    width = max(7, 1.45 * len(data.columns) + 4.8)
+    fig, ax = plt.subplots(figsize=(width, height))
+    image = ax.imshow(matrix, aspect="auto", cmap=cmap)
+
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.set_xticks(range(len(data.columns)))
+    ax.set_xticklabels(data.columns)
+    ax.set_yticks(range(len(data.index)))
+    ax.set_yticklabels(data.index)
+
+    for row_index, row_label in enumerate(data.index):
+        for col_index, column in enumerate(data.columns):
+            value = matrix[row_index, col_index]
+            if pd.notna(value):
+                ax.text(
+                    col_index,
+                    row_index,
+                    value_format.format(float(value)),
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                )
+
+    colorbar = fig.colorbar(image, ax=ax)
+    colorbar.set_label(colorbar_label)
+    if colorbar_percent:
+        colorbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f"{value:.0%}"))
+    if colorbar_currency:
+        colorbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f"${value:.3f}"))
+
+    plt.tight_layout()
+    plt.savefig(path)
+    plt.close()
+
+
+def save_model_mode_heatmaps(path_prefix: Path, summary: pd.DataFrame) -> None:
+    save_model_mode_heatmap(
+        path_prefix / "heatmap_error_dimensions_by_model_mode.svg",
+        summary,
+        "mean_abs_percent_error_dimensions",
+        "Erro médio dimensional por modelo e imagem",
+        "Erro médio dimensional (%)",
+        "YlOrRd",
+        "{:.1f}",
+    )
+    save_model_mode_heatmap(
+        path_prefix / "heatmap_error_including_weight_by_model_mode.svg",
+        summary,
+        "mean_abs_percent_error_all",
+        "Erro médio incluindo peso por modelo e imagem",
+        "Erro médio incluindo peso (%)",
+        "YlOrRd",
+        "{:.1f}",
+    )
+    save_model_mode_heatmap(
+        path_prefix / "heatmap_interval_hit_dimensions_by_model_mode.svg",
+        summary,
+        "mean_dimension_interval_hit_rate",
+        "Taxa de acerto dimensional por modelo e imagem",
+        "Taxa de acerto dimensional",
+        "YlGn",
+        "{:.0%}",
+        colorbar_percent=True,
+    )
+    save_model_mode_heatmap(
+        path_prefix / "heatmap_interval_hit_including_weight_by_model_mode.svg",
+        summary,
+        "mean_all_interval_hit_rate",
+        "Taxa de acerto incluindo peso por modelo e imagem",
+        "Taxa de acerto incluindo peso",
+        "YlGn",
+        "{:.0%}",
+        colorbar_percent=True,
+    )
+    save_model_mode_heatmap(
+        path_prefix / "heatmap_total_cost_by_model_mode.svg",
+        summary,
+        "total_calculated_cost_usd",
+        "Custo total por modelo e imagem",
+        "Custo total (USD)",
+        "Blues",
+        "${:.3f}",
+        colorbar_currency=True,
+    )
+
+
 def save_cost_benefit_scatter(path: Path, summary: pd.DataFrame) -> None:
     if summary.empty:
         return
@@ -820,6 +927,7 @@ def write_outputs(input_csv: Path, output_dir: Path) -> None:
         color="#2563EB",
     )
     save_measure_heatmaps(output_dir, model_mode_measure_summary)
+    save_model_mode_heatmaps(output_dir, model_mode_summary)
 
     for measure in MEASURES:
         save_grouped_bar_chart(
