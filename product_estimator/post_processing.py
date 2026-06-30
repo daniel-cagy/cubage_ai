@@ -1,6 +1,114 @@
 from __future__ import annotations
 
-from product_estimator.constants import DIMENSION_KEYS, RANGE_KEYS, CONFIDENCE_LEVELS, FATOR_CUBAGEM, Objeto
+from copy import deepcopy
+from typing import Any
+
+from product_estimator.constants import (
+    DIMENSION_INTERVAL_CALIBRATION,
+    DIMENSION_INTERVAL_CALIBRATION_MULTIPLIER,
+    DIMENSION_KEYS,
+    RANGE_KEYS,
+    CONFIDENCE_LEVELS,
+    FATOR_CUBAGEM,
+    MIN_DIMENSION_RANGE_VALUE_CM,
+    MIN_WEIGHT_RANGE_VALUE_KG,
+    Objeto,
+    WEIGHT_INTERVAL_CALIBRATION,
+    WEIGHT_INTERVAL_CALIBRATION_MULTIPLIER,
+)
+
+
+def apply_calibrated_intervals(output: dict, known_measures: dict[str, float] | None = None) -> dict:
+    calibrated_output = deepcopy(output)
+    produto = calibrated_output.get("produto", {})
+    dimensoes = produto.get("dimensoes_estimadas_cm", {})
+
+    for dimension_key in DIMENSION_KEYS:
+        range_data = dimensoes.get(dimension_key, {})
+        estimate = range_data.get("estimativa")
+        calibration = DIMENSION_INTERVAL_CALIBRATION[dimension_key]
+        dimensoes[dimension_key] = build_calibrated_range(
+            estimate=estimate,
+            bias=calibration["bias"],
+            std=calibration["std"],
+            min_allowed_value=MIN_DIMENSION_RANGE_VALUE_CM,
+            multiplier=DIMENSION_INTERVAL_CALIBRATION_MULTIPLIER,
+        )
+
+    peso = produto.get("peso_estimado_kg", {})
+    weight_estimate = peso.get("estimativa")
+    weight_calibration = get_weight_interval_calibration(weight_estimate)
+    produto["peso_estimado_kg"] = build_calibrated_range(
+        estimate=weight_estimate,
+        bias=weight_calibration["bias"],
+        std=weight_calibration["std"],
+        min_allowed_value=MIN_WEIGHT_RANGE_VALUE_KG,
+        multiplier=WEIGHT_INTERVAL_CALIBRATION_MULTIPLIER,
+    )
+
+    return calibrated_output
+
+
+def build_calibrated_range(
+    estimate: Any,
+    bias: int | float,
+    std: int | float,
+    min_allowed_value: int | float,
+    multiplier: int | float,
+) -> dict[str, Any]:
+    if not is_number(estimate):
+        return {"min": estimate, "max": estimate, "estimativa": estimate}
+
+    estimate = max(float(estimate), float(min_allowed_value))
+    center = estimate - float(bias)
+    margin = float(multiplier) * float(std)
+
+    min_value = max(float(min_allowed_value), center - margin)
+    max_value = max(center + margin, estimate)
+
+    if min_value > estimate:
+        min_value = estimate
+    if max_value < estimate:
+        max_value = estimate
+
+    return {
+        "min": round(min_value, 4),
+        "max": round(max_value, 4),
+        "estimativa": round(estimate, 4),
+    }
+
+
+def get_weight_interval_calibration(estimate: Any) -> dict[str, Any]:
+    if not is_number(estimate):
+        return WEIGHT_INTERVAL_CALIBRATION[0]
+
+    estimate = float(estimate)
+    for calibration in WEIGHT_INTERVAL_CALIBRATION:
+        max_estimate = calibration["max_estimate_kg"]
+        if max_estimate is None or estimate < max_estimate:
+            return calibration
+
+    return WEIGHT_INTERVAL_CALIBRATION[-1]
+
+
+def get_interval_calibration_info(output: dict) -> dict[str, Any]:
+    produto = output.get("produto", {})
+    peso = produto.get("peso_estimado_kg", {})
+    weight_calibration = get_weight_interval_calibration(peso.get("estimativa"))
+
+    return {
+        "metodo": "desvio_padrao_pos_processamento",
+        "multiplicadores_desvio_padrao": {
+            "dimensoes": DIMENSION_INTERVAL_CALIBRATION_MULTIPLIER,
+            "peso": WEIGHT_INTERVAL_CALIBRATION_MULTIPLIER,
+        },
+        "dimensoes": DIMENSION_INTERVAL_CALIBRATION,
+        "peso": {
+            "classe_por_estimativa": weight_calibration["class"],
+            "bias": weight_calibration["bias"],
+            "std": weight_calibration["std"],
+        },
+    }
 
 
 def validation(output: dict, known_measures: dict[str, float] | None = None) -> dict:

@@ -123,7 +123,7 @@ Comprimento, largura e altura podem ser subjetivos dependendo da orientação do
 - `largura`: segundo maior lado;
 - `altura`: menor lado.
 
-Essa regra vale somente para os testes. O prompt e a resposta do modelo continuam usando as chaves normais. O CSV inclui:
+Essa regra vale somente para os testes. O prompt e a resposta final continuam usando as chaves normais. O CSV inclui:
 
 ```txt
 comprimento_source_dimension
@@ -225,7 +225,7 @@ Ela é útil, mas deve ser lida com cuidado. Produtos muito leves podem ter erro
 
 ## Taxa de acerto de intervalo
 
-O modelo retorna faixas `min` e `max`, não apenas uma estimativa pontual. A avaliação considera uma medida como acertada quando o valor real cai dentro do intervalo retornado.
+O modelo retorna apenas estimativas pontuais. O pós-processamento local calcula faixas `min` e `max` com base em calibração por desvio padrão. A avaliação considera uma medida como acertada quando o valor real cai dentro do intervalo final calibrado.
 
 Para dimensões:
 

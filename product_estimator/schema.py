@@ -20,13 +20,11 @@ MEASUREMENT_SCHEMA: dict[str, Any] = {
             "nivel_confianca": {"type": "string", "enum": ["baixo", "alto"]},
         },
         "$defs": {
-            "faixa_numerica": {
+            "estimativa_numerica": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["min", "max", "estimativa"],
+                "required": ["estimativa"],
                 "properties": {
-                    "min": {"type": "number", "minimum": 0},
-                    "max": {"type": "number", "minimum": 0},
                     "estimativa": {"type": "number", "minimum": 0},
                 },
             },
@@ -35,9 +33,9 @@ MEASUREMENT_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["comprimento", "largura", "altura"],
                 "properties": {
-                    "comprimento": {"$ref": "#/$defs/faixa_numerica"},
-                    "largura": {"$ref": "#/$defs/faixa_numerica"},
-                    "altura": {"$ref": "#/$defs/faixa_numerica"},
+                    "comprimento": {"$ref": "#/$defs/estimativa_numerica"},
+                    "largura": {"$ref": "#/$defs/estimativa_numerica"},
+                    "altura": {"$ref": "#/$defs/estimativa_numerica"},
                 },
             },
             "medidas_e_peso": {
@@ -46,7 +44,7 @@ MEASUREMENT_SCHEMA: dict[str, Any] = {
                 "required": ["dimensoes_estimadas_cm", "peso_estimado_kg"],
                 "properties": {
                     "dimensoes_estimadas_cm": {"$ref": "#/$defs/dimensoes"},
-                    "peso_estimado_kg": {"$ref": "#/$defs/faixa_numerica"},
+                    "peso_estimado_kg": {"$ref": "#/$defs/estimativa_numerica"},
                 },
             },
         },

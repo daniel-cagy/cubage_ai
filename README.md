@@ -19,7 +19,8 @@ O projeto hoje possui três partes principais:
 A resposta final é um dicionário com a resposta do modelo e dados adicionados no
 pós-processamento local. Os principais campos são:
 
-- `resposta`: JSON estruturado retornado pelo modelo;
+- `resposta`: JSON final com estimativas centrais e intervalos `min/max` calibrados no pós-processamento;
+- `resposta_modelo`: JSON cru retornado pelo modelo, antes da calibração local dos intervalos;
 - `resposta.produto`: dimensões estimadas em centímetros e peso estimado em quilogramas;
 - `resposta.nivel_confianca`: confiança binária, `alto` ou `baixo`;
 - `validacao`: status, erros e alertas detectados localmente;
@@ -190,13 +191,13 @@ python cli.py ./frente.jpg "Produto de exemplo" --extra-image ./lateral.jpg --ex
 - `resized`: redimensiona e comprime a imagem;
 - `quantized`: redimensiona e aplica quantização de cores.
 
-`product_estimator/post_processing.py` valida a resposta do modelo e calcula métricas logísticas, como volume, peso cubado e peso cobrável.
+`product_estimator/post_processing.py` calibra os intervalos `min/max`, valida a resposta final e calcula métricas logísticas, como volume, peso cubado e peso cobrável.
 
 `product_estimator/constants.py` guarda constantes e estruturas compartilhadas, como `FATOR_CUBAGEM`, chaves de dimensão e a classe `Objeto`.
 
 `product_estimator/prompt.py` guarda o prompt de sistema enviado ao modelo.
 
-`product_estimator/schema.py` guarda o JSON Schema exigido da resposta do modelo.
+`product_estimator/schema.py` guarda o JSON Schema exigido da resposta do modelo. O schema pede apenas estimativas centrais; os intervalos são calculados localmente depois.
 
 ## Avaliação Experimental
 

@@ -5,6 +5,22 @@ from dataclasses import dataclass
 FATOR_CUBAGEM = 6000
 
 
+DIMENSION_INTERVAL_CALIBRATION_MULTIPLIER = 1.64
+WEIGHT_INTERVAL_CALIBRATION_MULTIPLIER = 1.96
+MIN_DIMENSION_RANGE_VALUE_CM = 0.1
+MIN_WEIGHT_RANGE_VALUE_KG = 0.001
+DIMENSION_INTERVAL_CALIBRATION = {
+    "comprimento": {"bias": 0.5350, "std": 1.6146},
+    "largura": {"bias": -0.0913, "std": 1.9883},
+    "altura": {"bias": 0.2506, "std": 0.6066},
+}
+WEIGHT_INTERVAL_CALIBRATION = (
+    {"class": "leve", "max_estimate_kg": 0.1, "bias": 0.0114, "std": 0.0245},
+    {"class": "medio", "max_estimate_kg": 0.5, "bias": 0.0602, "std": 0.0418},
+    {"class": "pesado", "max_estimate_kg": None, "bias": 0.1500, "std": 0.1158},
+)
+
+
 DIMENSION_KEYS = ("comprimento", "largura", "altura")
 RANGE_KEYS = ("min", "max", "estimativa")
 MEASURED_OBJECT_KEYS = ("produto",)

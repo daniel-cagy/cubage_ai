@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 from product_estimator.schema import MEASUREMENT_SCHEMA
 from product_estimator.prompt import SYSTEM_PROMPT
-from product_estimator.post_processing import get_metricas_logisticas, validation
+from product_estimator.post_processing import apply_calibrated_intervals, get_interval_calibration_info, get_metricas_logisticas, validation
 from product_estimator.image_processing import DEFAULT_IMAGE_PROCESSING_MODE, image_to_data_url
 from product_estimator.constants import FATOR_CUBAGEM, Objeto, KNOWN_MEASURE_LABELS, KNOWN_MEASURE_UNITS
 
@@ -148,8 +148,13 @@ def estimate_product(
         },
     )
 
+    raw_response = parse_response_json(response)
+    calibrated_response = apply_calibrated_intervals(raw_response, known_measures)
+
     result = {}
-    result["resposta"] = parse_response_json(response)
+    result["resposta_modelo"] = raw_response
+    result["resposta"] = calibrated_response
+    result["calibracao_intervalos"] = get_interval_calibration_info(calibrated_response)
     result["openai_response_id"] = getattr(response, "id", None)
     result["openai_response_status"] = getattr(response, "status", None)
     result["modelo_utilizado"] = model
