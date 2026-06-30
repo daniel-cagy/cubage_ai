@@ -9,7 +9,7 @@ from product_estimator.schema import MEASUREMENT_SCHEMA
 from product_estimator.prompt import SYSTEM_PROMPT
 from product_estimator.post_processing import apply_calibrated_intervals, get_interval_calibration_info, get_metricas_logisticas, validation
 from product_estimator.image_processing import DEFAULT_IMAGE_PROCESSING_MODE, image_to_data_url
-from product_estimator.constants import FATOR_CUBAGEM, Objeto, KNOWN_MEASURE_LABELS, KNOWN_MEASURE_UNITS
+from product_estimator.constants import FATOR_CUBAGEM, MODEL_TEMPERATURE, Objeto, KNOWN_MEASURE_LABELS, KNOWN_MEASURE_UNITS
 
 from openai import OpenAI
 
@@ -128,6 +128,7 @@ def estimate_product(
 
     response = client.responses.create(
         model=model,
+        temperature=MODEL_TEMPERATURE,
         instructions=SYSTEM_PROMPT,
         input=[
             {
@@ -158,6 +159,7 @@ def estimate_product(
     result["openai_response_id"] = getattr(response, "id", None)
     result["openai_response_status"] = getattr(response, "status", None)
     result["modelo_utilizado"] = model
+    result["temperatura_utilizada"] = MODEL_TEMPERATURE
     result["fator_cubagem_utilizado"] = cubage_factor
     result["medidas_conhecidas_informadas"] = known_measures or {}
     result["modo_processamento_imagem"] = image_processing_mode

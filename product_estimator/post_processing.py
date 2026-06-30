@@ -1,20 +1,25 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from math import ceil, floor
 from typing import Any
 
 from product_estimator.constants import (
     DIMENSION_INTERVAL_CALIBRATION,
+    DIMENSION_DISPLAY_DECIMAL_PLACES,
     DIMENSION_INTERVAL_CALIBRATION_MULTIPLIER,
     DIMENSION_KEYS,
     RANGE_KEYS,
     CONFIDENCE_LEVELS,
     FATOR_CUBAGEM,
+    MIN_DIMENSION_DISPLAY_VALUE_CM,
     MIN_DIMENSION_RANGE_VALUE_CM,
     MIN_WEIGHT_RANGE_VALUE_KG,
     Objeto,
+    WEIGHT_DISPLAY_DECIMAL_PLACES,
     WEIGHT_INTERVAL_CALIBRATION,
     WEIGHT_INTERVAL_CALIBRATION_MULTIPLIER,
+    MIN_WEIGHT_DISPLAY_VALUE_KG,
 )
 
 
@@ -46,7 +51,88 @@ def apply_calibrated_intervals(output: dict, known_measures: dict[str, float] | 
         multiplier=WEIGHT_INTERVAL_CALIBRATION_MULTIPLIER,
     )
 
+    round_output_ranges(calibrated_output)
+    apply_known_measures(calibrated_output, known_measures)
+
     return calibrated_output
+
+
+def apply_known_measures(output: dict, known_measures: dict[str, float] | None) -> None:
+    if not known_measures:
+        return
+
+    produto = output.get("produto", {})
+    dimensoes = produto.get("dimensoes_estimadas_cm", {})
+
+    for measure_type, known_value in known_measures.items():
+        if not is_number(known_value) or known_value <= 0:
+            continue
+
+        if measure_type in DIMENSION_KEYS:
+            apply_exact_value_range(dimensoes.get(measure_type, {}), known_value)
+        elif measure_type == "peso":
+            apply_exact_value_range(produto.get("peso_estimado_kg", {}), known_value)
+
+
+def apply_exact_value_range(faixa: dict, value: int | float) -> None:
+    if type(faixa) != dict:
+        return
+
+    faixa["min"] = value
+    faixa["max"] = value
+    faixa["estimativa"] = value
+
+
+def round_output_ranges(output: dict) -> None:
+    produto = output.get("produto", {})
+    dimensoes = produto.get("dimensoes_estimadas_cm", {})
+
+    for dimension_key in DIMENSION_KEYS:
+        faixa = dimensoes.get(dimension_key, {})
+        round_dimension_range(faixa)
+
+    round_weight_range(produto.get("peso_estimado_kg", {}))
+
+
+def round_dimension_range(faixa: dict) -> None:
+    if not is_valid_range_for_rounding(faixa):
+        return
+
+    min_value = max(MIN_DIMENSION_DISPLAY_VALUE_CM, floor(faixa["min"]))
+    max_value = max(min_value, ceil(faixa["max"]))
+    estimate = round(faixa["estimativa"], DIMENSION_DISPLAY_DECIMAL_PLACES)
+    estimate = min(max(estimate, min_value), max_value)
+
+    faixa["min"] = min_value
+    faixa["max"] = max_value
+    faixa["estimativa"] = estimate
+
+
+def round_weight_range(faixa: dict) -> None:
+    if not is_valid_range_for_rounding(faixa):
+        return
+
+    decimal_factor = 10 ** WEIGHT_DISPLAY_DECIMAL_PLACES
+    min_value = floor(faixa["min"] * decimal_factor) / decimal_factor
+    min_value = max(MIN_WEIGHT_DISPLAY_VALUE_KG, min_value)
+    max_value = ceil(faixa["max"] * decimal_factor) / decimal_factor
+    max_value = max(min_value, max_value)
+    estimate = round(faixa["estimativa"], WEIGHT_DISPLAY_DECIMAL_PLACES)
+    estimate = min(max(estimate, min_value), max_value)
+
+    faixa["min"] = round(min_value, WEIGHT_DISPLAY_DECIMAL_PLACES)
+    faixa["max"] = round(max_value, WEIGHT_DISPLAY_DECIMAL_PLACES)
+    faixa["estimativa"] = round(estimate, WEIGHT_DISPLAY_DECIMAL_PLACES)
+
+
+def is_valid_range_for_rounding(faixa: object) -> bool:
+    if type(faixa) != dict:
+        return False
+
+    if not all(key in faixa for key in RANGE_KEYS):
+        return False
+
+    return all(is_number(faixa[key]) for key in RANGE_KEYS)
 
 
 def build_calibrated_range(
