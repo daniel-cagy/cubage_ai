@@ -13,7 +13,7 @@ import {
 } from './js/dom.js';
 import { resetExport, setExportPayload, setupExportActions } from './js/exportResults.js';
 import { collectKnownMeasures, setupKnownMeasures } from './js/knownMeasures.js';
-import { renderError, renderResult } from './js/render.js';
+import { renderError, renderResult } from './js/render.js?v=20260702-no-confidence';
 import { getCubageFactor, getImageProcessingMode, getSelectedModel, setupAdvancedSettings } from './js/settings.js';
 import { setupUpload } from './js/upload.js';
 

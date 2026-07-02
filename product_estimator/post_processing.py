@@ -10,7 +10,6 @@ from product_estimator.constants import (
     DIMENSION_INTERVAL_CALIBRATION_MULTIPLIER,
     DIMENSION_KEYS,
     RANGE_KEYS,
-    CONFIDENCE_LEVELS,
     FATOR_CUBAGEM,
     MIN_DIMENSION_DISPLAY_VALUE_CM,
     MIN_DIMENSION_RANGE_VALUE_CM,
@@ -213,7 +212,6 @@ def validation(output: dict, known_measures: dict[str, float] | None = None) -> 
         "produto_identificado",
         "descricao_resumida",
         "produto",
-        "nivel_confianca",
     }
 
     missing_keys = [key for key in required_keys if key not in output]
@@ -231,9 +229,6 @@ def validation(output: dict, known_measures: dict[str, float] | None = None) -> 
             "erros": erros,
             "alertas": alertas,
         }
-
-    if output["nivel_confianca"] not in CONFIDENCE_LEVELS:
-        erros.append("'nivel_confianca' deve ser 'baixo' ou 'alto'.")
 
     if known_measures:
         check_medidas_conhecidas(output, known_measures, alertas)
@@ -254,9 +249,6 @@ def is_tipagem_correta(output: dict, erros: list[str] | None = None) -> bool:
 
     if type(output["descricao_resumida"]) != str:
         erros.append("'descricao_resumida' deve ser uma string.")
-
-    if type(output["nivel_confianca"]) != str:
-        erros.append("'nivel_confianca' deve ser uma string.")
 
     produto = output.get("produto")
     check_tipagem_objeto(produto, "produto", erros)

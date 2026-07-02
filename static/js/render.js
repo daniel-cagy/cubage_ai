@@ -67,8 +67,6 @@ export function renderResult(payload) {
   const corrections = payload.correcoes_usuario || {};
   const adjustedProduct = payload.produto_ajustado || {};
   const adjustedDimensions = adjustedProduct.dimensoes_cm || {};
-  const confidence = resposta.nivel_confianca === 'alto' ? 'alto' : 'baixo';
-
   const comprimentoValue = getMeasureValue({
     field: 'comprimento',
     range: dimensoes.comprimento,
@@ -113,7 +111,6 @@ export function renderResult(payload) {
       <div class="result-description">${escapeHtml(resposta.descricao_resumida || '')}</div>
       ${renderKnownMeasuresSummary(payload.medidas_conhecidas_informadas)}
       ${renderUserCorrectionsSummary(corrections)}
-      <span class="confidence ${confidence === 'baixo' ? 'low' : ''}">Confiança ${confidence}</span>
       <div class="result-grid">
         ${editableMetric('Comprimento', 'comprimento', comprimentoValue)}
         ${editableMetric('Largura', 'largura', larguraValue)}

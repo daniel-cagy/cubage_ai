@@ -29,7 +29,6 @@ WEIGHT_INTERVAL_CALIBRATION = (
 DIMENSION_KEYS = ("comprimento", "largura", "altura")
 RANGE_KEYS = ("min", "max", "estimativa")
 MEASURED_OBJECT_KEYS = ("produto",)
-CONFIDENCE_LEVELS = {"baixo", "alto"}
 KNOWN_MEASURE_LABELS = {
     "comprimento": "comprimento conhecido",
     "largura": "largura conhecida",

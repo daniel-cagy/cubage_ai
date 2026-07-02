@@ -22,7 +22,6 @@ pós-processamento local. Os principais campos são:
 - `resposta`: JSON final com estimativas centrais e intervalos `min/max` calibrados no pós-processamento;
 - `resposta_modelo`: JSON cru retornado pelo modelo, antes da calibração local dos intervalos;
 - `resposta.produto`: dimensões estimadas em centímetros e peso estimado em quilogramas;
-- `resposta.nivel_confianca`: confiança binária, `alto` ou `baixo`;
 - `validacao`: status, erros e alertas detectados localmente;
 - `metricas_logisticas`: volume, densidade, peso cubado, peso cobrável e fator de cubagem usado;
 - `correcoes_usuario` e `produto_ajustado`: valores manuais informados após o resultado, quando houver;
@@ -177,7 +176,7 @@ python cli.py ./frente.jpg "Produto de exemplo" --extra-image ./lateral.jpg --ex
 
 `static/js/settings.js` controla configurações avançadas: modelo, fator de cubagem e modo de imagem.
 
-`static/js/render.js` renderiza resultado, métricas logísticas, confiança e alertas.
+`static/js/render.js` renderiza resultado, métricas logísticas e alertas.
 
 `static/js/exportResults.js` exporta o resultado em JSON ou CSV.
 
